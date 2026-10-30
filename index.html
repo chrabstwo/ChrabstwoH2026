@@ -27,10 +27,10 @@
             overflow: hidden;
         }
         
-        /* Styl mini menu po lewej stronie */
+        /* Styl mini menu w lewym dolnym rogu */
         #sidebar {
             position: fixed;
-            top: 20px;
+            bottom: 20px;
             left: 20px;
             width: 260px;
             background: #1e222d;
@@ -151,7 +151,7 @@
 </head>
 <body>
 
-<!-- Mini menu po lewej stronie -->
+<!-- Mini menu w lewym dolnym rogu -->
 <div id="sidebar">
     <h2>Chrabstwo 4Life</h2>
     
@@ -168,7 +168,7 @@
         <h4>Panel Administratora</h4>
         <div id="admin-login-view">
             <input type="password" id="admin-pass" placeholder="Hasło admina">
-            <button id="admin-login-btn">Odblokuj dodawanie</button>
+            <button id="admin-login-btn">Zaloguj</button>
             <div id="admin-err" class="admin-status" style="color: #ff5252; display: none;">Błędne hasło!</div>
         </div>
         <div id="admin-logged-view" style="display: none;">
