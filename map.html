@@ -133,7 +133,7 @@
             line-height: normal !important;
         }
         .leaflet-container a.leaflet-popup-close-button {
-            display: none !important; /* ukrywa biały przycisk X */
+            display: none !important;
         }
 
         /* Styl ciemnego okienka popup */
@@ -150,8 +150,8 @@
         .popup-box input {
             width: 100%;
             box-sizing: border-box;
-            padding: 8px 10px;
-            margin: 6px 0 10px 0;
+            padding: 7px 10px;
+            margin: 4px 0 10px 0;
             background: #141720;
             border: 1px solid #2a2e3d;
             color: white;
@@ -257,7 +257,6 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    // Hasło administratora
     const HASLO_ADMINA = "admin2026"; 
 
     let czyAdmin = sessionStorage.getItem("admin_zalogowany") === "true";
@@ -333,23 +332,35 @@
 
     let wszystkieDynieDane = [];
     let warstwyMarkerow = [];
+    let tymczasowyCelownik = null; // Zmienna na celownik admina
 
-    // TWORZENIE PINEZKI W STYLU GOOGLE MAPS (SVG)
+    // Ikona pinezki standardowej
     function stwórzIkonę(jestZebrana) {
-        const kolor = jestZebrana ? "#00b894" : "#ff5252"; // Zielony dla zebranych, Czerwony dla niezebranych
-        
+        const kolor = jestZebrana ? "#00b894" : "#ff5252";
         const pinSvg = `
             <svg width="30" height="42" viewBox="0 0 384 512" xmlns="http://www.w3.org/2000/svg">
                 <path fill="${kolor}" stroke="#ffffff" stroke-width="20" d="M172.268 501.67C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0zM192 272c44.183 0 80-35.817 80-80s-35.817-80-80-80-80 35.817-80 80 35.817 80 80 80z"/>
             </svg>
         `;
-        
         return L.divIcon({
             className: 'custom-google-pin',
             html: pinSvg,
             iconSize: [30, 42],
             iconAnchor: [15, 42],
             popupAnchor: [0, -38]
+        });
+    }
+
+    // Ikona celownika "X" dla admina
+    function stwórzCelownikX() {
+        const crosshairSvg = `
+            <div style="font-size: 26px; font-weight: bold; color: #ff5252; text-shadow: 0 0 4px #000, 0 0 4px #000; text-align: center; line-height: 24px; width: 24px; height: 24px;">✕</div>
+        `;
+        return L.divIcon({
+            className: 'admin-crosshair',
+            html: crosshairSvg,
+            iconSize: [24, 24],
+            iconAnchor: [12, 12]
         });
     }
 
@@ -402,7 +413,6 @@
         });
     }
 
-    // Pobieranie dyń z pliku H2026.json
     fetch('H2026.json')
         .then(response => response.json())
         .then(dynie => {
@@ -413,10 +423,14 @@
         .catch(err => console.log('Błąd wczytywania dyń z H2026.json:', err));
 
     window.copyJsonLine = function(y, x) {
-        const input = document.getElementById('img-url');
-        const imgUrl = input ? input.value.trim() : "https://i.imgur.com/przyklad.png";
+        const idInput = document.getElementById('item-id');
+        const urlInput = document.getElementById('img-url');
         
-        const jsonLine = `  {"y": ${y}, "x": ${x}, "img": "${imgUrl}"},`;
+        const idVal = idInput ? idInput.value.trim() : "1";
+        const imgUrl = urlInput ? urlInput.value.trim() : "https://i.imgur.com/przyklad.png";
+        
+        // Wygenerowany JSON z uwzględnieniem numeru id oraz URL
+        const jsonLine = `  {"id": ${idVal}, "y": ${y}, "x": ${x}, "img": "${imgUrl}"},`;
 
         navigator.clipboard.writeText(jsonLine).then(() => {
             const info = document.getElementById('copy-msg');
@@ -434,11 +448,27 @@
         const y = Math.round(e.latlng.lat);
         const x = Math.round(e.latlng.lng);
 
+        // Usuń poprzedni celownik jeśli istniał
+        if (tymczasowyCelownik) {
+            map.removeLayer(tymczasowyCelownik);
+        }
+
+        // Dodaj nowy celownik w miejscu kliknięcia
+        tymczasowyCelownik = L.marker([e.latlng.lat, e.latlng.lng], {
+            icon: stwórzCelownikX(),
+            interactive: false
+        }).addTo(map);
+
         const popupContent = `
             <div class="popup-box">
                 <div style="font-size: 11px; color: #94a3b8; margin-bottom: 4px;">Współrzędne: Y: <b>${y}</b>, X: <b>${x}</b></div>
+                
+                <label style="font-size: 11px; color: #cbd5e1;">Numer znajdzki:</label>
+                <input type="number" id="item-id" placeholder="np. 1">
+
                 <label style="font-size: 11px; color: #cbd5e1;">URL do obrazka (np. Imgur):</label>
                 <input type="text" id="img-url" placeholder="https://i.imgur.com/...">
+                
                 <button onclick="copyJsonLine(${y}, ${x})">KOPIUJ JSON</button>
                 <div id="copy-msg" class="copy-info">Skopiowano do schowka! ✓</div>
             </div>
@@ -448,6 +478,14 @@
             .setLatLng(e.latlng)
             .setContent(popupContent)
             .openOn(map);
+    });
+
+    // Gdy użytkownik zamknie okienko popup, usuwamy celownik z mapy
+    map.on('popupclose', function() {
+        if (tymczasowyCelownik) {
+            map.removeLayer(tymczasowyCelownik);
+            tymczasowyCelownik = null;
+        }
     });
 </script>
 
