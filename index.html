@@ -11,73 +11,122 @@
             height: 100%;
             margin: 0;
             padding: 0;
-            background-color: #0b0e14;
+            background-color: #161922;
         }
-        .popup-img {
-            max-width: 220px;
-            border-radius: 6px;
-            margin-top: 5px;
-            display: block;
-        }
-        /* Styl ekranu logowania */
+        /* Ekran logowania 1:1 jak ze screena */
         #login-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(11, 14, 20, 0.95);
+            background-color: #161922;
             display: flex;
             justify-content: center;
             align-items: center;
             z-index: 9999;
-            font-family: sans-serif;
-            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
         .login-box {
-            background: #161b22;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            background: #1e222d;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
             text-align: center;
-            border: 1px solid #30363d;
-            width: 300px;
+            border: 1px solid #2a2e3d;
+            width: 340px;
         }
-        .login-box h2 { margin-bottom: 20px; font-size: 20px; color: #ff751a; }
+        .login-box h3 { 
+            margin: 0 0 16px 0; 
+            font-size: 15px; 
+            color: #e2e8f0; 
+            font-weight: 500;
+        }
         .login-box input {
-            width: 85%;
-            padding: 10px;
-            margin-bottom: 15px;
-            background: #0d1117;
-            border: 1px solid #30363d;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            background: #141720;
+            border: 1px solid #2a2e3d;
             color: white;
-            border-radius: 5px;
-            font-size: 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+        }
+        .login-box input:focus {
+            border-color: #00b894;
         }
         .login-box button {
             width: 100%;
-            padding: 10px;
-            background: #ff751a;
+            padding: 12px;
+            background: #00b894;
             border: none;
             color: white;
-            font-weight: bold;
-            border-radius: 5px;
+            font-weight: 600;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 15px;
         }
-        .login-box button:hover { background: #e06512; }
-        .error-msg { color: #f85149; font-size: 14px; margin-top: 10px; display: none; }
+        .login-box button:hover { background: #019875; }
+        .error-msg { color: #ff5252; font-size: 13px; margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
 
-<!-- Ekran logowania -->
+<!-- Ekran logowania 1:1 -->
 <div id="login-overlay">
     <div class="login-box">
-        <h2>🎃 Mapa Dyń 4Life</h2>
-        <input type="password" id="password-input" placeholder="Wpisz hasło..." autofocus>
-        <button onclick="checkPassword()">Wejdź na mapę</button>
+        <h3>Wprowadź hasło, aby uzyskać dostęp do mapy</h3>
+        <input type="password" id="password-input" placeholder="Hasło" autofocus>
+        <button onclick="checkPassword()">Zaloguj</button>
         <div id="error" class="error-msg">Błędne hasło!</div>
     </div>
 </div>
 
 <div id="map"></div>
 
-<script src="https
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // TUTAJ WPISZ SWOJE HASŁO DLA GRACZY:
+    const POPRAWNE_HASLO = "4life2026";
+
+    // Sprawdzenie sesji (żeby nie pytało ponownie po odświeżeniu)
+    if (sessionStorage.getItem("zalogowany") === "true") {
+        document.getElementById("login-overlay").style.display = "none";
+    }
+
+    function checkPassword() {
+        const wpisaneHaslo = document.getElementById("password-input").value;
+        if (wpisaneHaslo === POPRAWNE_HASLO) {
+            sessionStorage.setItem("zalogowany", "true");
+            document.getElementById("login-overlay").style.display = "none";
+            setTimeout(() => { map.invalidateSize(); }, 100);
+        } else {
+            document.getElementById("error").style.display = "block";
+        }
+    }
+
+    // Obsługa klawisza Enter
+    document.getElementById("password-input").addEventListener("keypress", function(event) {
+        if (event.key === "Enter") {
+            checkPassword();
+        }
+    });
+
+    // Konfiguracja mapy Leaflet
+    const bounds = [[0, 0], [2048, 2048]];
+    const map = L.map('map', {
+        crs: L.CRS.Simple,
+        minZoom: -1,
+        maxZoom: 3,
+        maxBounds: bounds
+    });
+
+    L.imageOverlay('map_hq.jpg', bounds).addTo(map);
+    map.fitBounds(bounds);
+
+    // Przykładowy punkt
+    L.marker([1024, 1024]).addTo(map)
+        .bindPopup("<b>Środek mapy</b><br>Przykładowa dynia");
+</script>
+
+</body>
+</html>
