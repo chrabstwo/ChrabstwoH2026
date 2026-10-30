@@ -11,7 +11,7 @@
             height: 100%;
             margin: 0;
             padding: 0;
-            background-color: #0d1117;
+            background-color: #0b0e14;
         }
         .popup-img {
             max-width: 220px;
@@ -27,29 +27,26 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    // 1. Definiujemy wymiary grafiki mapy (2048 x 2048 pikseli)
+    // 1. Ustawiamy zasięg mapy (od 0,0 do 2048,2048)
     const bounds = [[0, 0], [2048, 2048]];
 
-    // 2. Inicjalizacja prostej mapy płaskiej
+    // 2. Inicjalizacja prostej mapy 2D
     const map = L.map('map', {
         crs: L.CRS.Simple,
         minZoom: -1,
-        maxZoom: 2,
+        maxZoom: 3,
         maxBounds: bounds
     });
 
-    // 3. Wczytanie wgranego pliku mapa.jpg
-    L.imageOverlay('mapa.jpg', bounds).addTo(map);
+    // 3. Wczytanie Twojego pliku mapa.png
+    L.imageOverlay('map_hq.jpg', bounds).addTo(map);
     map.fitBounds(bounds);
 
-    // 4. Tutaj dodajesz swoje dynie (współrzędne Y, X na obrazku)
-    // Przykłady:
+    // 4. Miejsce na Twoje dynie (pozycje Y, X)
+    // Przykładowe punkty:
     
-    L.marker([1000, 1000]).addTo(map)
-        .bindPopup("<b>Dynia #1</b><br>Przechowalnia San Fierro");
-
-    L.marker([1200, 1500]).addTo(map)
-        .bindPopup("<b>Dynia #2</b><br>Lotnisko Las Venturas<br><img src='https://i.imgur.com/TwojScreen.jpg' class='popup-img'>");
+    L.marker([1024, 1024]).addTo(map)
+        .bindPopup("<b>Środek mapy</b><br>Przykładowa dynia");
 
 </script>
 
