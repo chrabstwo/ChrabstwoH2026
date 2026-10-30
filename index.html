@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mapa Dyń 4Life - Halloween</title>
     
-    <!-- Sprawdzenie sesji logowania -->
+    <!-- Natychmiastowe sprawdzenie sesji (1 godzina) - jeśli brak, wraca do logowania -->
     <script>
         const wygasniecie = localStorage.getItem("login_wygasa");
         const teraz = new Date().getTime();
@@ -65,6 +65,12 @@
             display: none;
             font-weight: bold;
         }
+        .popup-img {
+            max-width: 200px;
+            border-radius: 4px;
+            margin-top: 6px;
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -73,7 +79,7 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    // Inicjalizacja mapy
+    // Inicjalizacja mapy Leaflet
     const bounds = [[0, 0], [2048, 2048]];
     const map = L.map('map', {
         crs: L.CRS.Simple,
@@ -85,12 +91,28 @@
     L.imageOverlay('map_hq.jpg', bounds).addTo(map);
     map.fitBounds(bounds);
 
-    // Funkcja kopiująca wygenerowaną linijkę JSON do schowka
+    // Pobieranie dyń z pliku H2026.json i nanoszenie na mapę
+    fetch('H2026.json')
+        .then(response => response.json())
+        .then(dynie => {
+            dynie.forEach(dynia => {
+                const popupContent = `
+                    <b>Dynia organizacyjna</b><br>
+                    Współrzędne: Y: ${dynia.y}, X: ${dynia.x}
+                    <img src="${dynia.img}" class="popup-img" alt="Screen dyni" onerror="this.style.display='none'">
+                `;
+
+                L.marker([dynia.y, dynia.x]).addTo(map)
+                    .bindPopup(popupContent);
+            });
+        })
+        .catch(err => console.log('Błąd wczytywania dyń z H2026.json:', err));
+
+    // Funkcja kopiująca wygenerowaną linijkę JSON do schowka po kliknięciu
     window.copyJsonLine = function(y, x) {
         const input = document.getElementById('screen-name');
         const imgName = input ? input.value.trim() : "dynia.jpg";
         
-        // Format linijki JSON, którą od razu wklejasz do pliku
         const jsonLine = `  {"y": ${y}, "x": ${x}, "img": "${imgName}"},`;
 
         navigator.clipboard.writeText(jsonLine).then(() => {
@@ -102,7 +124,7 @@
         });
     };
 
-    // Nasłuchiwanie kliknięcia w dowolne miejsce mapy w celu pobrania współrzędnych
+    // Nasłuchiwanie kliknięcia w dowolne miejsce mapy w celu dodawania punktów
     map.on('click', function(e) {
         const y = Math.round(e.latlng.lat);
         const x = Math.round(e.latlng.lng);
@@ -122,10 +144,6 @@
             .setContent(popupContent)
             .openOn(map);
     });
-
-    // Przykładowy punkt startowy
-    L.marker([1024, 1024]).addTo(map)
-        .bindPopup("<b>Środek mapy</b><br>Kliknij w dowolne miejsce, aby dodać dynię!");
 </script>
 
 </body>
