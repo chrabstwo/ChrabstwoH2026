@@ -27,6 +27,28 @@
             overflow: hidden;
         }
         
+        /* Licznik zebranych dyń na górze po środku */
+        #counter-box {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e222d;
+            border: 1px solid #2a2e3d;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+            z-index: 1000;
+            font-family: sans-serif;
+            color: #e2e8f0;
+            padding: 10px 20px;
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        #counter-box span {
+            color: #00b894;
+        }
+
         /* Styl mini menu w lewym dolnym rogu */
         #sidebar {
             position: fixed;
@@ -82,7 +104,7 @@
         .admin-box input:focus {
             border-color: #00b894;
         }
-        .admin-box button {
+        .admin-box button, .user-action-btn {
             width: 100%;
             padding: 8px;
             background: #00b894;
@@ -93,7 +115,7 @@
             cursor: pointer;
             font-size: 13px;
         }
-        .admin-box button:hover { background: #019875; }
+        .admin-box button:hover, .user-action-btn:hover { background: #019875; }
         .admin-status {
             font-size: 12px;
             margin-top: 6px;
@@ -147,14 +169,47 @@
             margin-top: 6px;
             display: block;
         }
+        .collected-btn {
+            width: 100%;
+            padding: 8px;
+            background: #00b894;
+            border: none;
+            color: white;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 8px;
+            text-align: center;
+        }
+        .collected-btn:hover { background: #019875; }
+        .collected-btn.uncollect {
+            background: #ef4444;
+        }
+        .collected-btn.uncollect:hover { background: #dc2626; }
     </style>
 </head>
 <body>
+
+<!-- Licznik na górze -->
+<div id="counter-box">
+    Zebranych znajdziek: <span id="collected-count">0</span>/180
+</div>
 
 <!-- Mini menu w lewym dolnym rogu -->
 <div id="sidebar">
     <h2>Chrabstwo 4Life</h2>
     
+    <!-- Opcje użytkownika (ukrywanie i reset) -->
+    <div class="menu-section">
+        <h4>Postęp znajdziek</h4>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; margin-bottom: 10px; color: #cbd5e1;">
+            <input type="checkbox" id="hide-collected-chk" style="accent-color: #00b894; width: 16px; height: 16px; cursor: pointer;">
+            <span>Ukryj zebrane znajdźki</span>
+        </label>
+        <button id="reset-progress-btn" class="user-action-btn" style="background: #334155; font-size: 12px;">Zresetuj zebrane znajdźki</button>
+    </div>
+
     <!-- Wybór eventów (przyszłościowy) -->
     <div class="menu-section">
         <h4>Wybierz event</h4>
@@ -185,9 +240,32 @@
     // Hasło administratora do odblokowywania trybu dodawania punktów
     const HASLO_ADMINA = "admin2026"; 
 
-    // Stan uprawnień administratora w pamięci przeglądarki (sesja karty)
+    // Stan uprawnień administratora
     let czyAdmin = sessionStorage.getItem("admin_zalogowany") === "true";
 
+    // Pobieranie zebranych dyń z localStorage (zostaje na zawsze do wyczyszczenia ciasteczek)
+    let zebraneDynie = JSON.parse(localStorage.getItem("chrabstwo_zebrane_dynie") || "[]");
+    let ukryjZebrane = localStorage.getItem("chrabstwo_ukryj_zebrane") === "true";
+
+    const hideCollectedChk = document.getElementById("hide-collected-chk");
+    hideCollectedChk.checked = ukryjZebrane;
+
+    hideCollectedChk.addEventListener("change", (e) => {
+        ukryjZebrane = e.target.checked;
+        localStorage.setItem("chrabstwo_ukryj_zebrane", ukryjZebrane);
+        odswiezMarkeryNaMapie();
+    });
+
+    document.getElementById("reset-progress-btn").addEventListener("click", () => {
+        if (confirm("Czy na pewno chcesz zresetować postęp wszystkich zebranych dyń?")) {
+            zebraneDynie = [];
+            localStorage.removeItem("chrabstwo_zebrane_dynie");
+            odswiezMarkeryNaMapie();
+            aktualizujLicznik();
+        }
+    });
+
+    // Elementy panelu admina
     const adminLoginView = document.getElementById("admin-login-view");
     const adminLoggedView = document.getElementById("admin-logged-view");
     const adminPassInput = document.getElementById("admin-pass");
@@ -236,20 +314,83 @@
     L.imageOverlay('map_hq.jpg', bounds).addTo(map);
     map.fitBounds(bounds);
 
-    // Pobieranie dyń z pliku H2026.json i nanoszenie na mapę
-    fetch('H2026.json')
-        .then(response => response.json())
-        .then(dynie => {
-            dynie.forEach(dynia => {
-                const popupContent = `
+    let wszystkieDynieDane = [];
+    let warstwyMarkerow = [];
+
+    // Niestandardowe ikony markerów (zwykła i zielona/zebrana)
+    function stwórzIkonę(jestZebrana) {
+        const kolor = jestZebrana ? "#00b894" : "#ff9f43";
+        const ikonaHtml = `
+            <div style="background-color: ${kolor}; width: 16px; height: 16px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 6px rgba(0,0,0,0.6);"></div>
+        `;
+        return L.divIcon({
+            className: 'custom-pumpkin-icon',
+            html: ikonaHtml,
+            iconSize: [16, 16],
+            iconAnchor: [8, 8]
+        });
+    }
+
+    function aktualizujLicznik() {
+        document.getElementById("collected-count").innerText = zebraneDynie.length;
+    }
+
+    // Funkcja przełączająca stan dyni (zebrane / niezebrane)
+    window.przelaczStanDyni = function(idDyni) {
+        const index = zebraneDynie.indexOf(idDyni);
+        if (index > -1) {
+            zebraneDynie.splice(index, 1); // Odznacz jako niezebrane
+        } else {
+            zebraneDynie.push(idDyni); // Oznacz jako zebrane
+        }
+        localStorage.setItem("chrabstwo_zebrane_dynie", JSON.stringify(zebraneDynie));
+        aktualizujLicznik();
+        odswiezMarkeryNaMapie();
+        map.closePopup();
+    };
+
+    function odswiezMarkeryNaMapie() {
+        // Usuń stare markery
+        warstwyMarkerow.forEach(m => map.removeLayer(m));
+        warstwyMarkerow = [];
+
+        wszystkieDynieDane.forEach((dynia, index) => {
+            // Unikalne ID dyni bazujące na jej współrzędnych
+            const idDyni = `${dynia.y}_${dynia.x}`;
+            const jestZebrana = zebraneDynie.includes(idDyni);
+
+            // Jeśli włączone jest ukrywanie zebranych, pomijamy renderowanie
+            if (ukryjZebrane && jestZebrana) return;
+
+            const marker = L.marker([dynia.y, dynia.x], {
+                icon: stwórzIkonę(jestZebrana)
+            });
+
+            const przyciskTekst = jestZebrana ? "Oznacz jako niezebrane" : "✓ Zebrane";
+            const przyciskKlasa = jestZebrana ? "collected-btn uncollect" : "collected-btn";
+
+            const popupContent = `
+                <div class="popup-box">
                     <b>Dynia organizacyjna</b><br>
                     Współrzędne: Y: ${dynia.y}, X: ${dynia.x}
                     <img src="${dynia.img}" class="popup-img" alt="Screen dyni" onerror="this.style.display='none'">
-                `;
+                    <button class="${przyciskKlasa}" onclick="przelaczStanDyni('${idDyni}')">${przyciskTekst}</button>
+                </div>
+            `;
 
-                L.marker([dynia.y, dynia.x]).addTo(map)
-                    .bindPopup(popupContent);
-            });
+            marker.bindPopup(popupContent);
+            marker.addTo(map);
+            warstwyMarkerow.push(marker);
+        });
+    }
+
+    // Pobieranie dyń z pliku H2026.json
+    fetch('H2026.json')
+        .then(response => response.json())
+        .then(dynie => {
+            wszystkieDynieDane = dynie;
+            aktualizujLicznik();
+            odswiezMarkeryNaMapie();
         })
         .catch(err => console.log('Błąd wczytywania dyń z H2026.json:', err));
 
@@ -271,7 +412,7 @@
 
     // Nasłuchiwanie kliknięcia w mapę (aktywne tylko po zalogowaniu admina)
     map.on('click', function(e) {
-        if (!czyAdmin) return; // Jeśli nie zalogowany, nic się nie dzieje po kliknięciu w mapę
+        if (!czyAdmin) return; 
 
         const y = Math.round(e.latlng.lat);
         const x = Math.round(e.latlng.lng);
