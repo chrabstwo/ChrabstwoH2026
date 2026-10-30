@@ -3,451 +3,192 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chrabstwo 4Life</title>
-    
-    <!-- Sprawdzenie sesji ogólnego dostępu (1 godzina) -->
-    <script>
-        const wygasniecie = localStorage.getItem("login_wygasa");
-        const teraz = new Date().getTime();
-
-        if (!wygasniecie || teraz >= parseInt(wygasniecie)) {
-            localStorage.removeItem("login_wygasa");
-            window.location.href = "login.html";
-        }
-    </script>
-
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <title>Panel logowania - Chrabstwo 4Life</title>
     <style>
-        html, body, #map {
+        html, body {
             width: 100%;
             height: 100%;
             margin: 0;
             padding: 0;
-            background-color: #0b0e14;
+            background-color: #161922;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: sans-serif;
             overflow: hidden;
         }
-        
-        /* Licznik na górze po środku */
-        #counter-box {
+        #login-overlay {
             position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #1e222d;
-            border: 1px solid #2a2e3d;
-            border-radius: 10px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
-            z-index: 1000;
-            font-family: sans-serif;
-            color: #e2e8f0;
-            padding: 10px 20px;
-            font-size: 15px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #161922;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 99999;
+            transition: opacity 0.5s ease;
         }
-        #counter-box span {
-            color: #00b894;
-        }
-
-        /* Styl mini menu w lewym dolnym rogu */
-        #sidebar {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            width: 260px;
+        .login-box {
             background: #1e222d;
-            border: 1px solid #2a2e3d;
+            padding: 24px;
             border-radius: 12px;
             box-shadow: 0 8px 24px rgba(0,0,0,0.6);
-            z-index: 1000;
-            font-family: sans-serif;
-            color: #e2e8f0;
-            padding: 16px;
-            box-sizing: border-box;
+            text-align: left;
+            border: 1px solid #2a2e3d;
+            width: 380px;
         }
-        #sidebar h2 {
-            font-size: 15px;
-            margin: 0 0 12px 0;
-            color: #00b894;
+        .login-box h3 { 
+            margin: 0 0 16px 0; 
+            font-size: 15px; 
+            color: #e2e8f0; 
+            font-weight: 500;
             text-align: center;
-            font-weight: 600;
         }
-        .menu-section {
+        .login-box input[type="password"] {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px 16px;
+            margin-bottom: 14px;
+            background: #141720;
+            border: 1px solid #2a2e3d;
+            color: white;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+        }
+        .login-box input[type="password"]:focus {
+            border-color: #00b894;
+        }
+        .checkbox-container {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
             margin-bottom: 16px;
-            border-bottom: 1px solid #2a2e3d;
-            padding-bottom: 12px;
-        }
-        .menu-section:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
-        .menu-section h4 {
-            font-size: 12px;
-            color: #94a3b8;
-            margin: 0 0 8px 0;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .admin-box input {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 8px 10px;
-            margin-bottom: 8px;
-            background: #141720;
-            border: 1px solid #2a2e3d;
-            color: white;
-            border-radius: 6px;
+            cursor: pointer;
             font-size: 13px;
-            outline: none;
+            color: #cbd5e1;
+            line-height: 1.4;
+            user-select: none;
         }
-        .admin-box input:focus {
-            border-color: #00b894;
+        .checkbox-container input {
+            margin-top: 2px;
+            cursor: pointer;
+            accent-color: #00b894;
+            width: 16px;
+            height: 16px;
         }
-        .admin-box button, .user-action-btn {
+        .login-box button {
             width: 100%;
-            padding: 8px;
+            padding: 12px;
             background: #00b894;
             border: none;
             color: white;
-            font-weight: bold;
-            border-radius: 6px;
+            font-weight: 600;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 13px;
+            font-size: 15px;
         }
-        .admin-box button:hover, .user-action-btn:hover { background: #019875; }
-        .admin-status {
-            font-size: 12px;
-            margin-top: 6px;
-            text-align: center;
-        }
+        .login-box button:hover { background: #019875; }
+        .error-msg { color: #ff5252; font-size: 13px; margin-top: 10px; text-align: center; display: none; }
 
-        /* --- USUNIĘCIE BIAŁYCH RAMKI I STRZAŁKI W LEAFLET --- */
-        .leaflet-popup-content-wrapper, .leaflet-popup-tip {
-            background: transparent !important;
-            box-shadow: none !important;
-            padding: 0 !important;
-        }
-        .leaflet-popup-content {
-            margin: 0 !important;
-            line-height: normal !important;
-        }
-        .leaflet-container a.leaflet-popup-close-button {
-            display: none !important; /* ukrywa biały przycisk X */
-        }
-
-        /* Styl ciemnego okienka popup */
-        .popup-box {
-            font-family: sans-serif;
-            color: #e2e8f0;
-            background: #1e222d;
-            padding: 14px;
-            border-radius: 10px;
-            width: 240px;
-            border: 1px solid #2a2e3d;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.7);
-        }
-        .popup-box input {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 8px 10px;
-            margin: 6px 0 10px 0;
-            background: #141720;
-            border: 1px solid #2a2e3d;
-            color: white;
-            border-radius: 6px;
-            font-size: 12px;
-            outline: none;
-        }
-        .popup-box input:focus {
-            border-color: #00b894;
-        }
-        .popup-box button {
-            width: 100%;
-            padding: 8px;
-            background: #00b894;
-            border: none;
-            color: white;
-            font-weight: bold;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-        .popup-box button:hover { background: #019875; }
-        .copy-info {
-            color: #00b894;
-            font-size: 11px;
-            text-align: center;
-            margin-top: 6px;
+        .loader-container {
             display: none;
-            font-weight: bold;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #e2e8f0;
+            font-size: 15px;
         }
-        .popup-img {
-            max-width: 100%;
-            border-radius: 6px;
-            margin: 8px 0;
-            display: block;
-            border: 1px solid #2a2e3d;
+        .spinner {
+            width: 45px;
+            height: 45px;
+            border: 4px solid #2a2e3d;
+            border-top: 4px solid #00b894;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 15px;
         }
-        .collected-btn {
-            width: 100%;
-            padding: 8px;
-            background: #00b894;
-            border: none;
-            color: white;
-            font-weight: bold;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 12px;
-            margin-top: 8px;
-            text-align: center;
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
-        .collected-btn:hover { background: #019875; }
-        .collected-btn.uncollect {
-            background: #ef4444;
-        }
-        .collected-btn.uncollect:hover { background: #dc2626; }
     </style>
 </head>
 <body>
 
-<!-- Licznik na górze -->
-<div id="counter-box">
-    Zebranych znajdziek: <span id="collected-count">0</span>/180
-</div>
-
-<!-- Mini menu w lewym dolnym rogu -->
-<div id="sidebar">
-    <h2>Chrabstwo 4Life</h2>
-    
-    <!-- Opcje użytkownika (ukrywanie i reset) -->
-    <div class="menu-section">
-        <h4>Postęp znajdziek</h4>
-        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; margin-bottom: 10px; color: #cbd5e1;">
-            <input type="checkbox" id="hide-collected-chk" style="accent-color: #00b894; width: 16px; height: 16px; cursor: pointer;">
-            <span>Ukryj zebrane znajdźki</span>
+<div id="login-overlay">
+    <div id="login-box-wrapper" class="login-box">
+        <h3>Wprowadź hasło, aby uzyskać dostęp do mapy</h3>
+        <input type="password" id="password-input" placeholder="Hasło do mapy" autofocus>
+        
+        <label class="checkbox-container">
+            <input type="checkbox" id="org-checkbox">
+            <span>Oświadczam, że jestem członkiem organizacji Chrabstwo i używam mapy wyłącznie do wspólnych poszukiwań dyń wewnątrz organizacji.</span>
         </label>
-        <button id="reset-progress-btn" class="user-action-btn" style="background: #334155; font-size: 12px;">Zresetuj zebrane znajdźki</button>
+
+        <button id="login-btn">Zaloguj</button>
+        <div id="error" class="error-msg" style="display:none;"></div>
     </div>
 
-    <!-- Wybór eventów (przyszłościowy) -->
-    <div class="menu-section">
-        <h4>Wybierz event</h4>
-        <div style="font-size: 13px; color: #cbd5e1; padding: 4px 0; background: #141720; text-align: center; border-radius: 6px; border: 1px solid #2a2e3d;">
-            🎃 Halloween 2026 (Aktywny)
-        </div>
-    </div>
-
-    <!-- Panel Administratora / Dodawania punktów -->
-    <div class="menu-section admin-box">
-        <h4>Panel Administratora</h4>
-        <div id="admin-login-view">
-            <input type="password" id="admin-pass" placeholder="Hasło admina">
-            <button id="admin-login-btn">Zaloguj</button>
-            <div id="admin-err" class="admin-status" style="color: #ff5252; display: none;">Błędne hasło!</div>
-        </div>
-        <div id="admin-logged-view" style="display: none;">
-            <div class="admin-status" style="color: #00b894; font-weight: bold; margin-bottom: 6px;">✓ Tryb dodawania aktywny</div>
-            <button id="admin-logout-btn" style="background: #ef4444;">Zablokuj panel</button>
-        </div>
+    <div id="loader-wrapper" class="loader-container">
+        <div class="spinner"></div>
+        <span>Ładowanie mapy organizacji...</span>
     </div>
 </div>
 
-<div id="map"></div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    // Hasło administratora
-    const HASLO_ADMINA = "admin2026"; 
+    const POPRAWNE_HASLO = "4life2026"; // Hasło możesz zmienić tutaj
 
-    let czyAdmin = sessionStorage.getItem("admin_zalogowany") === "true";
-    let zebraneDynie = JSON.parse(localStorage.getItem("chrabstwo_zebrane_dynie") || "[]");
-    let ukryjZebrane = localStorage.getItem("chrabstwo_ukryj_zebrane") === "true";
+    const overlay = document.getElementById("login-overlay");
+    const loginBox = document.getElementById("login-box-wrapper");
+    const loader = document.getElementById("loader-wrapper");
+    const input = document.getElementById("password-input");
+    const checkbox = document.getElementById("org-checkbox");
+    const btn = document.getElementById("login-btn");
+    const errorDiv = document.getElementById("error");
 
-    const hideCollectedChk = document.getElementById("hide-collected-chk");
-    hideCollectedChk.checked = ukryjZebrane;
-
-    hideCollectedChk.addEventListener("change", (e) => {
-        ukryjZebrane = e.target.checked;
-        localStorage.setItem("chrabstwo_ukryj_zebrane", ukryjZebrane);
-        odswiezMarkeryNaMapie();
-    });
-
-    document.getElementById("reset-progress-btn").addEventListener("click", () => {
-        if (confirm("Czy na pewno chcesz zresetować postęp wszystkich zebranych dyń?")) {
-            zebraneDynie = [];
-            localStorage.removeItem("chrabstwo_zebrane_dynie");
-            odswiezMarkeryNaMapie();
-            aktualizujLicznik();
-        }
-    });
-
-    // Panel admina
-    const adminLoginView = document.getElementById("admin-login-view");
-    const adminLoggedView = document.getElementById("admin-logged-view");
-    const adminPassInput = document.getElementById("admin-pass");
-    const adminLoginBtn = document.getElementById("admin-login-btn");
-    const adminLogoutBtn = document.getElementById("admin-logout-btn");
-    const adminErr = document.getElementById("admin-err");
-
-    function odswiezPanelAdmina() {
-        if (czyAdmin) {
-            adminLoginView.style.display = "none";
-            adminLoggedView.style.display = "block";
-        } else {
-            adminLoginView.style.display = "block";
-            adminLoggedView.style.display = "none";
-        }
-    }
-    odswiezPanelAdmina();
-
-    adminLoginBtn.addEventListener("click", () => {
-        if (adminPassInput.value === HASLO_ADMINA) {
-            czyAdmin = true;
-            sessionStorage.setItem("admin_zalogowany", "true");
-            adminErr.style.display = "none";
-            adminPassInput.value = "";
-            odswiezPanelAdmina();
-        } else {
-            adminErr.style.display = "block";
-        }
-    });
-
-    adminLogoutBtn.addEventListener("click", () => {
-        czyAdmin = false;
-        sessionStorage.removeItem("admin_zalogowany");
-        odswiezPanelAdmina();
-    });
-
-    // Inicjalizacja mapy Leaflet
-    const bounds = [[0, 0], [2048, 2048]];
-    const map = L.map('map', {
-        crs: L.CRS.Simple,
-        minZoom: -1,
-        maxZoom: 3,
-        maxBounds: bounds
-    });
-
-    L.imageOverlay('map_hq.jpg', bounds).addTo(map);
-    map.fitBounds(bounds);
-
-    let wszystkieDynieDane = [];
-    let warstwyMarkerow = [];
-
-    // TWORZENIE PINEZKI W STYLU GOOGLE MAPS (SVG)
-    function stwórzIkonę(jestZebrana) {
-        const kolor = jestZebrana ? "#00b894" : "#ff5252"; // Zielony dla zebranych, Czerwony dla niezebranych
-        
-        const pinSvg = `
-            <svg width="30" height="42" viewBox="0 0 384 512" xmlns="http://www.w3.org/2000/svg">
-                <path fill="${kolor}" stroke="#ffffff" stroke-width="20" d="M172.268 501.67C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0zM192 272c44.183 0 80-35.817 80-80s-35.817-80-80-80-80 35.817-80 80 35.817 80 80 80z"/>
-            </svg>
-        `;
-        
-        return L.divIcon({
-            className: 'custom-google-pin',
-            html: pinSvg,
-            iconSize: [30, 42],
-            iconAnchor: [15, 42],
-            popupAnchor: [0, -38]
-        });
+    // Jeśli użytkownik ma już ważną sesję, od razu wyrzuca go na mapę
+    const wygasniecie = localStorage.getItem("login_wygasa");
+    const teraz = new Date().getTime();
+    if (wygasniecie && teraz < parseInt(wygasniecie)) {
+        window.location.href = "index.html";
     }
 
-    function aktualizujLicznik() {
-        document.getElementById("collected-count").innerText = zebraneDynie.length;
+    function pokazBlad(tekst) {
+        errorDiv.innerText = tekst;
+        errorDiv.style.display = "block";
     }
 
-    window.przelaczStanDyni = function(idDyni) {
-        const index = zebraneDynie.indexOf(idDyni);
-        if (index > -1) {
-            zebraneDynie.splice(index, 1);
-        } else {
-            zebraneDynie.push(idDyni);
+    function zaloguj() {
+        errorDiv.style.display = "none";
+
+        if (!checkbox.checked) {
+            pokazBlad("Musisz zaznaczyć oświadczenie członka organizacji!");
+            return;
         }
-        localStorage.setItem("chrabstwo_zebrane_dynie", JSON.stringify(zebraneDynie));
-        aktualizujLicznik();
-        odswiezMarkeryNaMapie();
-        map.closePopup();
-    };
 
-    function odswiezMarkeryNaMapie() {
-        warstwyMarkerow.forEach(m => map.removeLayer(m));
-        warstwyMarkerow = [];
+        if (input.value !== POPRAWNE_HASLO) {
+            pokazBlad("Błędne hasło!");
+            return;
+        }
 
-        wszystkieDynieDane.forEach((dynia) => {
-            const idDyni = `${dynia.y}_${dynia.x}`;
-            const jestZebrana = zebraneDynie.includes(idDyni);
+        // Zapis sesji na 1 godzinę
+        const zaWodzine = new Date().getTime() + (60 * 60 * 1000);
+        localStorage.setItem("login_wygasa", zaWodzine);
 
-            if (ukryjZebrane && jestZebrana) return;
+        // Pokazujemy ładujące kółko i po chwili przenosimy do index.html
+        loginBox.style.display = "none";
+        loader.style.display = "flex";
 
-            const marker = L.marker([dynia.y, dynia.x], {
-                icon: stwórzIkonę(jestZebrana)
-            });
-
-            const przyciskTekst = jestZebrana ? "Oznacz jako niezebrane" : "✓ Zebrane";
-            const przyciskKlasa = jestZebrana ? "collected-btn uncollect" : "collected-btn";
-
-            const popupContent = `
-                <div class="popup-box">
-                    <b style="font-size: 13px; color: #f8fafc;">Dynia organizacyjna</b><br>
-                    <div style="font-size: 11px; color: #94a3b8; margin: 2px 0 6px 0;">Współrzędne: Y: <b>${dynia.y}</b>, X: <b>${dynia.x}</b></div>
-                    <img src="${dynia.img}" class="popup-img" alt="Screen dyni" onerror="this.style.display='none'">
-                    <button class="${przyciskKlasa}" onclick="przelaczStanDyni('${idDyni}')">${przyciskTekst}</button>
-                </div>
-            `;
-
-            marker.bindPopup(popupContent);
-            marker.addTo(map);
-            warstwyMarkerow.push(marker);
-        });
+        setTimeout(() => {
+            window.location.href = "index.html";
+        }, 2000);
     }
 
-    // Pobieranie dyń z pliku H2026.json
-    fetch('H2026.json')
-        .then(response => response.json())
-        .then(dynie => {
-            wszystkieDynieDane = dynie;
-            aktualizujLicznik();
-            odswiezMarkeryNaMapie();
-        })
-        .catch(err => console.log('Błąd wczytywania dyń z H2026.json:', err));
-
-    window.copyJsonLine = function(y, x) {
-        const input = document.getElementById('img-url');
-        const imgUrl = input ? input.value.trim() : "https://i.imgur.com/przyklad.png";
-        
-        const jsonLine = `  {"y": ${y}, "x": ${x}, "img": "${imgUrl}"},`;
-
-        navigator.clipboard.writeText(jsonLine).then(() => {
-            const info = document.getElementById('copy-msg');
-            if (info) {
-                info.style.display = 'block';
-                setTimeout(() => { info.style.display = 'none'; }, 2500);
-            }
-        });
-    };
-
-    // Nasłuchiwanie kliknięcia w mapę dla admina
-    map.on('click', function(e) {
-        if (!czyAdmin) return; 
-
-        const y = Math.round(e.latlng.lat);
-        const x = Math.round(e.latlng.lng);
-
-        const popupContent = `
-            <div class="popup-box">
-                <div style="font-size: 11px; color: #94a3b8; margin-bottom: 4px;">Współrzędne: Y: <b>${y}</b>, X: <b>${x}</b></div>
-                <label style="font-size: 11px; color: #cbd5e1;">URL do obrazka (np. Imgur):</label>
-                <input type="text" id="img-url" placeholder="https://i.imgur.com/...">
-                <button onclick="copyJsonLine(${y}, ${x})">KOPIUJ JSON</button>
-                <div id="copy-msg" class="copy-info">Skopiowano do schowka! ✓</div>
-            </div>
-        `;
-
-        L.popup()
-            .setLatLng(e.latlng)
-            .setContent(popupContent)
-            .openOn(map);
+    btn.addEventListener("click", zaloguj);
+    input.addEventListener("keypress", function(e) {
+        if (e.key === "Enter") {
+            zaloguj();
+        }
     });
 </script>
 
