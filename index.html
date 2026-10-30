@@ -4,6 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mapa Dyń 4Life - Halloween</title>
+    
+    <!-- Sprawdzenie sesji logowania -->
+    <script>
+        const wygasniecie = localStorage.getItem("login_wygasa");
+        const teraz = new Date().getTime();
+
+        if (!wygasniecie || teraz >= parseInt(wygasniecie)) {
+            localStorage.removeItem("login_wygasa");
+            window.location.href = "login.html";
+        }
+    </script>
+
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         html, body, #map {
@@ -11,13 +23,47 @@
             height: 100%;
             margin: 0;
             padding: 0;
-            background-color: #161922;
+            background-color: #0b0e14;
         }
-        .popup-img {
-            max-width: 220px;
-            border-radius: 6px;
-            margin-top: 5px;
-            display: block;
+        .popup-box {
+            font-family: sans-serif;
+            color: #e2e8f0;
+            background: #1e222d;
+            padding: 10px;
+            border-radius: 8px;
+            width: 220px;
+        }
+        .popup-box input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 6px 8px;
+            margin: 6px 0 10px 0;
+            background: #141720;
+            border: 1px solid #2a2e3d;
+            color: white;
+            border-radius: 4px;
+            font-size: 13px;
+            outline: none;
+        }
+        .popup-box button {
+            width: 100%;
+            padding: 8px;
+            background: #00b894;
+            border: none;
+            color: white;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .popup-box button:hover { background: #019875; }
+        .copy-info {
+            color: #00b894;
+            font-size: 12px;
+            text-align: center;
+            margin-top: 6px;
+            display: none;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -27,15 +73,6 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    // Sprawdzenie sesji (1 godzina) - jeśli minęła lub brak, wraca do logowania
-    const wygasniecie = localStorage.getItem("login_wygasa");
-    const teraz = new Date().getTime();
-
-    if (!wygasniecie || teraz >= parseInt(wygasniecie)) {
-        localStorage.removeItem("login_wygasa");
-        window.location.href = "login.html";
-    }
-
     // Inicjalizacja mapy
     const bounds = [[0, 0], [2048, 2048]];
     const map = L.map('map', {
@@ -48,9 +85,47 @@
     L.imageOverlay('map_hq.jpg', bounds).addTo(map);
     map.fitBounds(bounds);
 
-    // Przykładowa dynia
+    // Funkcja kopiująca wygenerowaną linijkę JSON do schowka
+    window.copyJsonLine = function(y, x) {
+        const input = document.getElementById('screen-name');
+        const imgName = input ? input.value.trim() : "dynia.jpg";
+        
+        // Format linijki JSON, którą od razu wklejasz do pliku
+        const jsonLine = `  {"y": ${y}, "x": ${x}, "img": "${imgName}"},`;
+
+        navigator.clipboard.writeText(jsonLine).then(() => {
+            const info = document.getElementById('copy-msg');
+            if (info) {
+                info.style.display = 'block';
+                setTimeout(() => { info.style.display = 'none'; }, 2500);
+            }
+        });
+    };
+
+    // Nasłuchiwanie kliknięcia w dowolne miejsce mapy w celu pobrania współrzędnych
+    map.on('click', function(e) {
+        const y = Math.round(e.latlng.lat);
+        const x = Math.round(e.latlng.lng);
+
+        const popupContent = `
+            <div class="popup-box">
+                <div style="font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Współrzędne: Y: <b>${y}</b>, X: <b>${x}</b></div>
+                <label style="font-size: 12px;">Nazwa pliku screena:</label>
+                <input type="text" id="screen-name" placeholder="np. dynia1.jpg">
+                <button onclick="copyJsonLine(${y}, ${x})">KOPIUJ JSON</button>
+                <div id="copy-msg" class="copy-info">Skopiowano do schowka! ✓</div>
+            </div>
+        `;
+
+        L.popup()
+            .setLatLng(e.latlng)
+            .setContent(popupContent)
+            .openOn(map);
+    });
+
+    // Przykładowy punkt startowy
     L.marker([1024, 1024]).addTo(map)
-        .bindPopup("<b>Środek mapy</b><br>Przykładowa dynia organizacji");
+        .bindPopup("<b>Środek mapy</b><br>Kliknij w dowolne miejsce, aby dodać dynię!");
 </script>
 
 </body>
