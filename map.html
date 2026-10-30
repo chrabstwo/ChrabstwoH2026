@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa Dyń 4Life - Halloween</title>
+    
+    <!-- Sprawdzenie sesji ogólnego dostępu (1 godzina) -->
+    <script>
+        const wygasniecie = localStorage.getItem("login_wygasa");
+        const teraz = new Date().getTime();
+
+        if (!wygasniecie || teraz >= parseInt(wygasniecie)) {
+            localStorage.removeItem("login_wygasa");
+            window.location.href = "login.html";
+        }
+    </script>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: #0b0e14;
+            overflow: hidden;
+        }
+        
+        /* Styl mini menu w lewym dolnym rogu */
+        #sidebar {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 260px;
+            background: #1e222d;
+            border: 1px solid #2a2e3d;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+            z-index: 1000;
+            font-family: sans-serif;
+            color: #e2e8f0;
+            padding: 16px;
+            box-sizing: border-box;
+        }
+        #sidebar h2 {
+            font-size: 15px;
+            margin: 0 0 12px 0;
+            color: #00b894;
+            text-align: center;
+            font-weight: 600;
+        }
+        .menu-section {
+            margin-bottom: 16px;
+            border-bottom: 1px solid #2a2e3d;
+            padding-bottom: 12px;
+        }
+        .menu-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .menu-section h4 {
+            font-size: 12px;
+            color: #94a3b8;
+            margin: 0 0 8px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .admin-box input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px 10px;
+            margin-bottom: 8px;
+            background: #141720;
+            border: 1px solid #2a2e3d;
+            color: white;
+            border-radius: 6px;
+            font-size: 13px;
+            outline: none;
+        }
+        .admin-box input:focus {
+            border-color: #00b894;
+        }
+        .admin-box button {
+            width: 100%;
+            padding: 8px;
+            background: #00b894;
+            border: none;
+            color: white;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .admin-box button:hover { background: #019875; }
+        .admin-status {
+            font-size: 12px;
+            margin-top: 6px;
+            text-align: center;
+        }
+
+        /* Styl okienka popup na mapie */
+        .popup-box {
+            font-family: sans-serif;
+            color: #e2e8f0;
+            background: #1e222d;
+            padding: 10px;
+            border-radius: 8px;
+            width: 240px;
+        }
+        .popup-box input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 6px 8px;
+            margin: 6px 0 10px 0;
+            background: #141720;
+            border: 1px solid #2a2e3d;
+            color: white;
+            border-radius: 4px;
+            font-size: 12px;
+            outline: none;
+        }
+        .popup-box button {
+            width: 100%;
+            padding: 8px;
+            background: #00b894;
+            border: none;
+            color: white;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .popup-box button:hover { background: #019875; }
+        .copy-info {
+            color: #00b894;
+            font-size: 11px;
+            text-align: center;
+            margin-top: 6px;
+            display: none;
+            font-weight: bold;
+        }
+        .popup-img {
+            max-width: 200px;
+            border-radius: 4px;
+            margin-top: 6px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Mini menu w lewym dolnym rogu -->
+<div id="sidebar">
+    <h2>Chrabstwo 4Life</h2>
+    
+    <!-- Wybór eventów (przyszłościowy) -->
+    <div class="menu-section">
+        <h4>Wybierz event</h4>
+        <div style="font-size: 13px; color: #cbd5e1; padding: 4px 0; background: #141720; text-align: center; border-radius: 6px; border: 1px solid #2a2e3d;">
+            🎃 Halloween 2026 (Aktywny)
+        </div>
+    </div>
+
+    <!-- Panel Administratora / Dodawania punktów -->
+    <div class="menu-section admin-box">
+        <h4>Panel Administratora</h4>
+        <div id="admin-login-view">
+            <input type="password" id="admin-pass" placeholder="Hasło admina">
+            <button id="admin-login-btn">Zaloguj</button>
+            <div id="admin-err" class="admin-status" style="color: #ff5252; display: none;">Błędne hasło!</div>
+        </div>
+        <div id="admin-logged-view" style="display: none;">
+            <div class="admin-status" style="color: #00b894; font-weight: bold; margin-bottom: 6px;">✓ Tryb dodawania aktywny</div>
+            <button id="admin-logout-btn" style="background: #ef4444;">Zablokuj panel</button>
+        </div>
+    </div>
+</div>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // Hasło administratora do odblokowywania trybu dodawania punktów
+    const HASLO_ADMINA = "admin2026"; 
+
+    // Stan uprawnień administratora w pamięci przeglądarki (sesja karty)
+    let czyAdmin = sessionStorage.getItem("admin_zalogowany") === "true";
+
+    const adminLoginView = document.getElementById("admin-login-view");
+    const adminLoggedView = document.getElementById("admin-logged-view");
+    const adminPassInput = document.getElementById("admin-pass");
+    const adminLoginBtn = document.getElementById("admin-login-btn");
+    const adminLogoutBtn = document.getElementById("admin-logout-btn");
+    const adminErr = document.getElementById("admin-err");
+
+    function odswiezPanelAdmina() {
+        if (czyAdmin) {
+            adminLoginView.style.display = "none";
+            adminLoggedView.style.display = "block";
+        } else {
+            adminLoginView.style.display = "block";
+            adminLoggedView.style.display = "none";
+        }
+    }
+    odswiezPanelAdmina();
+
+    adminLoginBtn.addEventListener("click", () => {
+        if (adminPassInput.value === HASLO_ADMINA) {
+            czyAdmin = true;
+            sessionStorage.setItem("admin_zalogowany", "true");
+            adminErr.style.display = "none";
+            adminPassInput.value = "";
+            odswiezPanelAdmina();
+        } else {
+            adminErr.style.display = "block";
+        }
+    });
+
+    adminLogoutBtn.addEventListener("click", () => {
+        czyAdmin = false;
+        sessionStorage.removeItem("admin_zalogowany");
+        odswiezPanelAdmina();
+    });
+
+    // Inicjalizacja mapy Leaflet
+    const bounds = [[0, 0], [2048, 2048]];
+    const map = L.map('map', {
+        crs: L.CRS.Simple,
+        minZoom: -1,
+        maxZoom: 3,
+        maxBounds: bounds
+    });
+
+    L.imageOverlay('map_hq.jpg', bounds).addTo(map);
+    map.fitBounds(bounds);
+
+    // Pobieranie dyń z pliku H2026.json i nanoszenie na mapę
+    fetch('H2026.json')
+        .then(response => response.json())
+        .then(dynie => {
+            dynie.forEach(dynia => {
+                const popupContent = `
+                    <b>Dynia organizacyjna</b><br>
+                    Współrzędne: Y: ${dynia.y}, X: ${dynia.x}
+                    <img src="${dynia.img}" class="popup-img" alt="Screen dyni" onerror="this.style.display='none'">
+                `;
+
+                L.marker([dynia.y, dynia.x]).addTo(map)
+                    .bindPopup(popupContent);
+            });
+        })
+        .catch(err => console.log('Błąd wczytywania dyń z H2026.json:', err));
+
+    // Funkcja kopiująca wygenerowaną linijkę JSON ze ścieżką URL do schowka
+    window.copyJsonLine = function(y, x) {
+        const input = document.getElementById('img-url');
+        const imgUrl = input ? input.value.trim() : "https://i.imgur.com/przyklad.png";
+        
+        const jsonLine = `  {"y": ${y}, "x": ${x}, "img": "${imgUrl}"},`;
+
+        navigator.clipboard.writeText(jsonLine).then(() => {
+            const info = document.getElementById('copy-msg');
+            if (info) {
+                info.style.display = 'block';
+                setTimeout(() => { info.style.display = 'none'; }, 2500);
+            }
+        });
+    };
+
+    // Nasłuchiwanie kliknięcia w mapę (aktywne tylko po zalogowaniu admina)
+    map.on('click', function(e) {
+        if (!czyAdmin) return; // Jeśli nie zalogowany, nic się nie dzieje po kliknięciu w mapę
+
+        const y = Math.round(e.latlng.lat);
+        const x = Math.round(e.latlng.lng);
+
+        const popupContent = `
+            <div class="popup-box">
+                <div style="font-size: 11px; color: #94a3b8; margin-bottom: 4px;">Współrzędne: Y: <b>${y}</b>, X: <b>${x}</b></div>
+                <label style="font-size: 11px;">URL do obrazka (np. Imgur):</label>
+                <input type="text" id="img-url" placeholder="https://i.imgur.com/...">
+                <button onclick="copyJsonLine(${y}, ${x})">KOPIUJ JSON</button>
+                <div id="copy-msg" class="copy-info">Skopiowano do schowka! ✓</div>
+            </div>
+        `;
+
+        L.popup()
+            .setLatLng(e.latlng)
+            .setContent(popupContent)
+            .openOn(map);
+    });
+</script>
+
+</body>
+</html>
