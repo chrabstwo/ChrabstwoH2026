@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa Dyń 4Life - Halloween</title>
+    <!-- CSS Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: #0b0e14; /* Ciemne tło jak na screenie */
+        }
+    </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<!-- JS Leaflet -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // 1. Inicjalizacja mapy Leaflet
+    var map = L.map('map', {
+        crs: L.CRS.Simple, // Układ współrzędnych 2D dla map z gier
+        minZoom: 1,
+        maxZoom: 5
+    }).setView([-128, 128], 2);
+
+    // 2. Podpięcie gotowych kafelków czarnej mapy GTA SA
+    L.tileLayer('https://raw.githubusercontent.com/thegizmoofficial/Mapa/main/tiles/{z}/{x}/{y}.png', {
+        noWrap: true,
+        bounds: [[-256, 0], [0, 256]]
+    }).addTo(map);
+
+    // 3. Dodawanie dyń / punktów
+    // Współrzędne w Leaflet Simple CRS to [Y, X]
+    
+    var dynia1 = L.marker([-150, 100]).addTo(map);
+    dynia1.bindPopup("<b>Dynia #1</b><br>Przechowalnia San Fierro<br><a href='https://imgur.com/TwojScreen' target='_blank'>Zobacz screena</a>");
+
+    var dynia2 = L.marker([-80, 180]).addTo(map);
+    dynia2.bindPopup("<b>Dynia #2</b><br>Lotnisko Las Venturas");
+</script>
+
+</body>
+</html>
