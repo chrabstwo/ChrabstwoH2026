@@ -1,3 +1,62 @@
 [
-  {"y": 1024, "x": 1024, "img": "dynia_przyklad.jpg"}
+  {"id": 1, "y": 475, "x": 1233, "img": "https://i.imgur.com/L6nPjjf.png"},
+  {"id": 2, "y": 322, "x": 1149, "img": "https://i.imgur.com/Wo1qPEn.png"},
+  {"id": 3, "y": 382, "x": 1309, "img": "https://i.imgur.com/YAWkXs2.png"},
+  {"id": 4, "y": 472, "x": 1198, "img": "https://i.imgur.com/ai1ose9.png"},
+  {"id": 5, "y": 256, "x": 1763, "img": "https://i.imgur.com/GHrGj8t.png"},
+  {"id": 6, "y": 455, "x": 1154, "img": "https://i.imgur.com/7iRVsCW.png"},
+  {"id": 7, "y": 526, "x": 1419, "img": "https://i.imgur.com/kBRM0td.png"},
+  {"id": 8, "y": 382, "x": 1397, "img": "https://i.imgur.com/8CzlfiE.png"},
+  {"id": 9, "y": 208, "x": 1812, "img": "https://i.imgur.com/osdgW0n.png"},
+  {"id": 10, "y": 276, "x": 1848, "img": "https://i.imgur.com/RwWfLeS.png"},
+  {"id": 11, "y": 586, "x": 1179, "img": "https://i.imgur.com/vVqcbrm.png"},
+  {"id": 12, "y": 567, "x": 1136, "img": "https://i.imgur.com/rpwLxA1.png"},
+  {"id": 13, "y": 550, "x": 1614, "img": "https://i.imgur.com/sTqeQyt.png"},
+  {"id": 14, "y": 531, "x": 1126, "img": "https://i.imgur.com/l5VCkky.png"},
+  {"id": 15, "y": 531, "x": 1456, "img": "https://i.imgur.com/ukK9zeS.png"},
+  {"id": 16, "y": 575, "x": 1416, "img": "https://i.imgur.com/Jjj2JrE.png"},
+  {"id": 17, "y": 595, "x": 1393, "img": "https://i.imgur.com/sJrLrcL.png"},
+  {"id": 18, "y": 615, "x": 1591, "img": "https://i.imgur.com/tDGnHvw.png"},
+  {"id": 19, "y": 567, "x": 1446, "img": "https://i.imgur.com/rIo0692.png"},
+  {"id": 20, "y": 660, "x": 1313, "img": "https://i.imgur.com/nCwRQWy.png"},
+  {"id": 21, "y": 678, "x": 1308, "img": "https://i.imgur.com/qefKODC.png"},
+  {"id": 22, "y": 521, "x": 1838, "img": "https://i.imgur.com/xx02XdP.png"},
+  {"id": 23, "y": 371, "x": 1074, "img": "https://i.imgur.com/BiiYljx.png"},
+  {"id": 24, "y": 520, "x": 1055, "img": "https://i.imgur.com/Jikpqbc.png"},
+  {"id": 25, "y": 298, "x": 1574, "img": "https://i.imgur.com/mRbxrAi.png"},
+  {"id": 26, "y": 292, "x": 1684, "img": "https://i.imgur.com/xHiW2V6.png"},
+  {"id": 27, "y": 497, "x": 1935, "img": "blob:https://imgur.com/8fa453e8-d8ff-447c-9865-074f430720cc"},
+  {"id": 28, "y": 793, "x": 1481, "img": "https://i.imgur.com/XGQug4r.png"},
+  {"id": 29, "y": 494, "x": 1645, "img": "https://i.imgur.com/7EPQz9D.png"},
+  {"id": 30, "y": 509, "x": 1612, "img": "https://i.imgur.com/JlFVKsk.png"},
+  {"id": 31, "y": 519, "x": 1740, "img": "https://i.imgur.com/usfTMoh.png"},
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]
