@@ -13,196 +13,28 @@
             padding: 0;
             background-color: #161922;
         }
-        /* Ekran logowania i ładowania (wspólne tło) */
-        #login-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-color: #161922;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 99999;
-            font-family: sans-serif;
-            transition: opacity 0.5s ease;
-        }
-        .login-box {
-            background: #1e222d;
-            padding: 24px;
-            border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
-            text-align: left;
-            border: 1px solid #2a2e3d;
-            width: 380px;
-        }
-        .login-box h3 { 
-            margin: 0 0 16px 0; 
-            font-size: 15px; 
-            color: #e2e8f0; 
-            font-weight: 500;
-            text-align: center;
-        }
-        .login-box input[type="password"] {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 12px 16px;
-            margin-bottom: 14px;
-            background: #141720;
-            border: 1px solid #2a2e3d;
-            color: white;
-            border-radius: 8px;
-            font-size: 14px;
-            outline: none;
-        }
-        .login-box input[type="password"]:focus {
-            border-color: #00b894;
-        }
-        .checkbox-container {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            margin-bottom: 16px;
-            cursor: pointer;
-            font-size: 13px;
-            color: #cbd5e1;
-            line-height: 1.4;
-            user-select: none;
-        }
-        .checkbox-container input {
-            margin-top: 2px;
-            cursor: pointer;
-            accent-color: #00b894;
-            width: 16px;
-            height: 16px;
-        }
-        .login-box button {
-            width: 100%;
-            padding: 12px;
-            background: #00b894;
-            border: none;
-            color: white;
-            font-weight: 600;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 15px;
-        }
-        .login-box button:hover { background: #019875; }
-        .error-msg { color: #ff5252; font-size: 13px; margin-top: 10px; text-align: center; display: none; }
-
-        /* Styl kręcącego się kółka ładowania */
-        .loader-container {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: #e2e8f0;
-            font-size: 15px;
-        }
-        .spinner {
-            width: 45px;
-            height: 45px;
-            border: 4px solid #2a2e3d;
-            border-top: 4px solid #00b894;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin-bottom: 15px;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .popup-img {
+            max-width: 220px;
+            border-radius: 6px;
+            margin-top: 5px;
+            display: block;
         }
     </style>
 </head>
 <body>
 
-<!-- Ekran logowania / ładowania -->
-<div id="login-overlay">
-    <!-- Panel logowania -->
-    <div id="login-box-wrapper" class="login-box">
-        <h3>Wprowadź hasło, aby uzyskać dostęp do mapy</h3>
-        <input type="password" id="password-input" placeholder="Hasło do mapy">
-        
-        <label class="checkbox-container">
-            <input type="checkbox" id="org-checkbox">
-            <span>Oświadczam, że jestem członkiem organizacji Chrabstwo i używam mapy wyłącznie do wspólnych poszukiwań dyń wewnątrz organizacji.</span>
-        </label>
-
-        <button id="login-btn">Zaloguj</button>
-        <div id="error" class="error-msg" style="display:none;"></div>
-    </div>
-
-    <!-- Kręcące się kółko ładowania (ukryte domyślnie) -->
-    <div id="loader-wrapper" class="loader-container">
-        <div class="spinner"></div>
-        <span>Ładowanie mapy organizacji...</span>
-    </div>
-</div>
-
 <div id="map"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    const POPRAWNE_HASLO = "4life2026"; // Zmień na swoje hasło
-
-    const overlay = document.getElementById("login-overlay");
-    const loginBox = document.getElementById("login-box-wrapper");
-    const loader = document.getElementById("loader-wrapper");
-    const input = document.getElementById("password-input");
-    const checkbox = document.getElementById("org-checkbox");
-    const btn = document.getElementById("login-btn");
-    const errorDiv = document.getElementById("error");
-
-    // Sprawdzanie wygaśnięcia sesji (1 godzina)
+    // Sprawdzenie sesji (1 godzina) - jeśli minęła lub brak, wraca do logowania
     const wygasniecie = localStorage.getItem("login_wygasa");
     const teraz = new Date().getTime();
 
-    if (wygasniecie && teraz < parseInt(wygasniecie)) {
-        overlay.style.display = "none";
-    } else {
+    if (!wygasniecie || teraz >= parseInt(wygasniecie)) {
         localStorage.removeItem("login_wygasa");
+        window.location.href = "login.html";
     }
-
-    function pokazBlad(tekst) {
-        errorDiv.innerText = tekst;
-        errorDiv.style.display = "block";
-    }
-
-    function zaloguj() {
-        errorDiv.style.display = "none";
-
-        if (!checkbox.checked) {
-            pokazBlad("Musisz zaznaczyć oświadczenie członka organizacji!");
-            return;
-        }
-
-        if (input.value !== POPRAWNE_HASLO) {
-            pokazBlad("Błędne hasło!");
-            return;
-        }
-
-        // Zapisanie sesji na godzinę
-        const zaWodzine = new Date().getTime() + (60 * 60 * 1000);
-        localStorage.setItem("login_wygasa", zaWodzine);
-
-        // Schowaj panel logowania, pokaż kółko ładowania na tle
-        loginBox.style.display = "none";
-        loader.style.display = "flex";
-
-        // Symulacja ładowania przez 2.5 sekundy, a potem płynne zniknięcie całego overlay
-        setTimeout(() => {
-            overlay.style.opacity = "0";
-            setTimeout(() => {
-                overlay.style.display = "none";
-                map.invalidateSize();
-            }, 500); // czas przejścia CSS
-        }, 2500);
-    }
-
-    btn.addEventListener("click", zaloguj);
-    input.addEventListener("keypress", function(e) {
-        if (e.key === "Enter") {
-            zaloguj();
-        }
-    });
 
     // Inicjalizacja mapy
     const bounds = [[0, 0], [2048, 2048]];
@@ -216,6 +48,7 @@
     L.imageOverlay('map_hq.jpg', bounds).addTo(map);
     map.fitBounds(bounds);
 
+    // Przykładowa dynia
     L.marker([1024, 1024]).addTo(map)
         .bindPopup("<b>Środek mapy</b><br>Przykładowa dynia organizacji");
 </script>
