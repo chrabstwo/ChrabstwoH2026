@@ -38,13 +38,11 @@
         maxBounds: bounds
     });
 
-    // 3. Wczytanie Twojego pliku mapa.png
+    // 3. Wczytanie Twojego pliku map_hq.jpg
     L.imageOverlay('map_hq.jpg', bounds).addTo(map);
     map.fitBounds(bounds);
 
     // 4. Miejsce na Twoje dynie (pozycje Y, X)
-    // Przykładowe punkty:
-    
     L.marker([1024, 1024]).addTo(map)
         .bindPopup("<b>Środek mapy</b><br>Przykładowa dynia");
 
