@@ -13,7 +13,6 @@
             padding: 0;
             background-color: #161922;
         }
-        /* Ekran logowania 1:1 jak ze screena */
         #login-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -21,14 +20,14 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 9999;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            z-index: 99999;
+            font-family: sans-serif;
         }
         .login-box {
             background: #1e222d;
             padding: 24px;
             border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
             text-align: center;
             border: 1px solid #2a2e3d;
             width: 340px;
@@ -71,12 +70,12 @@
 </head>
 <body>
 
-<!-- Ekran logowania 1:1 -->
+<!-- Ekran logowania -->
 <div id="login-overlay">
     <div class="login-box">
         <h3>Wprowadź hasło, aby uzyskać dostęp do mapy</h3>
-        <input type="password" id="password-input" placeholder="Hasło" autofocus>
-        <button onclick="checkPassword()">Zaloguj</button>
+        <input type="password" id="password-input" placeholder="Hasło">
+        <button id="login-btn">Zaloguj</button>
         <div id="error" class="error-msg">Błędne hasło!</div>
     </div>
 </div>
@@ -85,33 +84,38 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    // TUTAJ WPISZ SWOJE HASŁO DLA GRACZY:
+    // TUTAJ WPISZ SWOJE HASŁO:
     const POPRAWNE_HASLO = "4life2026";
 
-    // Sprawdzenie sesji (żeby nie pytało ponownie po odświeżeniu)
+    const overlay = document.getElementById("login-overlay");
+    const input = document.getElementById("password-input");
+    const btn = document.getElementById("login-btn");
+    const errorDiv = document.getElementById("error");
+
+    // Sprawdzenie czy użytkownik był już zalogowany
     if (sessionStorage.getItem("zalogowany") === "true") {
-        document.getElementById("login-overlay").style.display = "none";
+        overlay.style.display = "none";
     }
 
-    function checkPassword() {
-        const wpisaneHaslo = document.getElementById("password-input").value;
-        if (wpisaneHaslo === POPRAWNE_HASLO) {
+    function zaloguj() {
+        if (input.value === POPRAWNE_HASLO) {
             sessionStorage.setItem("zalogowany", "true");
-            document.getElementById("login-overlay").style.display = "none";
-            setTimeout(() => { map.invalidateSize(); }, 100);
+            overlay.style.display = "none";
+            setTimeout(() => { map.invalidateSize(); }, 200);
         } else {
-            document.getElementById("error").style.display = "block";
+            errorDiv.style.display = "block";
         }
     }
 
-    // Obsługa klawisza Enter
-    document.getElementById("password-input").addEventListener("keypress", function(event) {
-        if (event.key === "Enter") {
-            checkPassword();
+    // Kliknięcie w przycisk lub enter
+    btn.addEventListener("click", zaloguj);
+    input.addEventListener("keypress", function(e) {
+        if (e.key === "Enter") {
+            zaloguj();
         }
     });
 
-    // Konfiguracja mapy Leaflet
+    // Inicjalizacja mapy
     const bounds = [[0, 0], [2048, 2048]];
     const map = L.map('map', {
         crs: L.CRS.Simple,
@@ -123,7 +127,6 @@
     L.imageOverlay('map_hq.jpg', bounds).addTo(map);
     map.fitBounds(bounds);
 
-    // Przykładowy punkt
     L.marker([1024, 1024]).addTo(map)
         .bindPopup("<b>Środek mapy</b><br>Przykładowa dynia");
 </script>
