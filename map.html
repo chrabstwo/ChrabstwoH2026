@@ -188,6 +188,11 @@
             margin: 8px 0;
             display: block;
             border: 1px solid #2a2e3d;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .popup-img:hover {
+            opacity: 0.8;
         }
         .collected-btn {
             width: 100%;
@@ -207,6 +212,28 @@
             background: #ef4444;
         }
         .collected-btn.uncollect:hover { background: #dc2626; }
+
+        /* --- MODAL DO POWIĘKSZANIA ZDJĘĆ --- */
+        #image-modal {
+            display: none;
+            position: fixed;
+            z-index: 99999;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+        #image-modal img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 8px;
+            border: 2px solid #2a2e3d;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
     </style>
 </head>
 <body>
@@ -214,6 +241,11 @@
 <!-- Licznik na górze -->
 <div id="counter-box">
     Zebranych znajdziek: <span id="collected-count">0</span>/<span id="total-count">0</span>
+</div>
+
+<!-- Modal do pełnego ekranu obrazka -->
+<div id="image-modal" onclick="zamknijZdjecie()">
+    <img id="modal-img" src="" alt="Powiększony screen">
 </div>
 
 <!-- Mini menu w lewym dolnym rogu -->
@@ -324,15 +356,15 @@
     });
 
     // --- USTAWIANIE GRANIC MAPY ---
-    const imageBounds = [[0, 0], [2048, 2048]]; // Wymiary obrazka
-    const cameraBounds = [[-300, -300], [2348, 2348]]; // Granica przesuwania kamery (+300px z każdej strony)
+    const imageBounds = [[0, 0], [2048, 2048]]; 
+    const cameraBounds = [[-300, -300], [2348, 2348]]; 
 
     const map = L.map('map', {
         crs: L.CRS.Simple,
         minZoom: -1,
         maxZoom: 3,
         maxBounds: cameraBounds,
-        maxBoundsViscosity: 0.7 // Miękkie "odbijanie" od krawędzi
+        maxBoundsViscosity: 0.7 
     });
 
     L.imageOverlay('map_hq.jpg', imageBounds).addTo(map);
@@ -341,6 +373,18 @@
     let wszystkieDynieDane = [];
     let warstwyMarkerow = [];
     let tymczasowyCelownik = null;
+
+    // Funkcje powiększania zdjęcia
+    window.pokazZdjecie = function(url) {
+        const modal = document.getElementById("image-modal");
+        const modalImg = document.getElementById("modal-img");
+        modalImg.src = url;
+        modal.style.display = "flex";
+    };
+
+    window.zamknijZdjecie = function() {
+        document.getElementById("image-modal").style.display = "none";
+    };
 
     // Ikona pinezki standardowej
     function stwórzIkonę(jestZebrana) {
@@ -412,7 +456,7 @@
                 <div class="popup-box">
                     <b style="font-size: 13px; color: #f8fafc;">${numerDyni}</b><br>
                     <div style="font-size: 11px; color: #94a3b8; margin: 2px 0 6px 0;">Współrzędne: Y: <b>${dynia.y}</b>, X: <b>${dynia.x}</b></div>
-                    <img src="${dynia.img}" class="popup-img" alt="Screen dyni" onerror="this.style.display='none'">
+                    <img src="${dynia.img}" class="popup-img" alt="Screen dyni" onclick="pokazZdjecie('${dynia.img}')" onerror="this.style.display='none'" title="Kliknij, aby powiększyć">
                     <button class="${przyciskKlasa}" onclick="przelaczStanDyni('${idDyni}')">${przyciskTekst}</button>
                 </div>
             `;
