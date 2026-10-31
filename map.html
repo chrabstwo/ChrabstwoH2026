@@ -213,7 +213,7 @@
 
 <!-- Licznik na górze -->
 <div id="counter-box">
-    Zebranych znajdziek: <span id="collected-count">0</span>/180
+    Zebranych znajdziek: <span id="collected-count">0</span>/<span id="total-count">0</span>
 </div>
 
 <!-- Mini menu w lewym dolnym rogu -->
@@ -371,6 +371,7 @@
 
     function aktualizujLicznik() {
         document.getElementById("collected-count").innerText = zebraneDynie.length;
+        document.getElementById("total-count").innerText = wszystkieDynieDane.length;
     }
 
     window.przelaczStanDyni = function(idDyni) {
@@ -402,10 +403,11 @@
 
             const przyciskTekst = jestZebrana ? "Oznacz jako niezebrane" : "✓ Zebrane";
             const przyciskKlasa = jestZebrana ? "collected-btn uncollect" : "collected-btn";
+            const numerDyni = dynia.id ? `Dynia #${dynia.id}` : "Dynia organizacyjna";
 
             const popupContent = `
                 <div class="popup-box">
-                    <b style="font-size: 13px; color: #f8fafc;">Dynia #${dynia.id || 'org'}</b><br>
+                    <b style="font-size: 13px; color: #f8fafc;">${numerDyni}</b><br>
                     <div style="font-size: 11px; color: #94a3b8; margin: 2px 0 6px 0;">Współrzędne: Y: <b>${dynia.y}</b>, X: <b>${dynia.x}</b></div>
                     <img src="${dynia.img}" class="popup-img" alt="Screen dyni" onerror="this.style.display='none'">
                     <button class="${przyciskKlasa}" onclick="przelaczStanDyni('${idDyni}')">${przyciskTekst}</button>
