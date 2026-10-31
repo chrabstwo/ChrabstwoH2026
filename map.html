@@ -323,17 +323,20 @@
         odswiezPanelAdmina();
     });
 
-    // Inicjalizacja mapy Leaflet
-    const bounds = [[0, 0], [2048, 2048]];
+    // --- USTAWIANIE GRANIC MAPY ---
+    const imageBounds = [[0, 0], [2048, 2048]]; // Wymiary obrazka
+    const cameraBounds = [[-300, -300], [2348, 2348]]; // Granica przesuwania kamery (+300px z każdej strony)
+
     const map = L.map('map', {
         crs: L.CRS.Simple,
         minZoom: -1,
         maxZoom: 3,
-        maxBounds: bounds
+        maxBounds: cameraBounds,
+        maxBoundsViscosity: 0.7 // Miękkie "odbijanie" od krawędzi
     });
 
-    L.imageOverlay('map_hq.jpg', bounds).addTo(map);
-    map.fitBounds(bounds);
+    L.imageOverlay('map_hq.jpg', imageBounds).addTo(map);
+    map.fitBounds(imageBounds);
 
     let wszystkieDynieDane = [];
     let warstwyMarkerow = [];
