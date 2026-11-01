@@ -118,8 +118,8 @@
             display: block;
             width: 100%;
             padding: 8px;
-            background: #334155;
-            border: none;
+            background: #141720;
+            border: 1px solid #2a2e3d;
             color: white;
             font-weight: bold;
             border-radius: 6px;
@@ -129,7 +129,7 @@
             text-decoration: none;
             box-sizing: border-box;
         }
-        .back-btn:hover { background: #475569; }
+        .back-btn:hover { background: #1e222d; border-color: #00b894; }
 
         /* --- USUNIĘCIE BIAŁYCH RAMKI I STRZAŁKI W LEAFLET --- */
         .leaflet-popup-content-wrapper, .leaflet-popup-tip {
@@ -230,7 +230,7 @@
     <!-- Wybór eventu -->
     <div class="menu-section">
         <h4>Wybierz event</h4>
-        <a href="map.html" class="back-btn" style="margin-bottom: 8px; background: #141720; border: 1px solid #2a2e3d;">🎃 Dynie Halloween 2026</a>
+        <a href="map.html" class="back-btn" style="margin-bottom: 8px;">🎃 Dynie Halloween 2026</a>
         <div style="font-size: 13px; color: #00b894; padding: 6px 0; background: #141720; text-align: center; border-radius: 6px; border: 1px solid #00b894; font-weight: bold;">
             📖 Fabuła Halloween 2026
         </div>
@@ -319,30 +319,40 @@
     let warstwyMarkerow = [];
     let tymczasowyCelownik = null;
 
-    // Kolory i ikony w zależności od typu obiektu
+    // Definicje wektorowych ikonek SVG dla każdego typu obiektu
     function pobierzStylTypu(typ) {
         switch(typ) {
-            case 'willard': return { kolor: '#3b82f6', nazwa: '🚗 Spawn Willarda' };       // Niebieski
-            case 'officer': return { kolor: '#eab308', nazwa: '👤 Spawn Officera' };           // Żółty
-            case 'szeryf': return { kolor: '#a855f7', nazwa: '👮 Spawn Szeryfa' };   // Fioletowy
-            default: return { kolor: '#00b894', nazwa: '📍 Punkt Fabularny' };
+            case 'willard': 
+                return { 
+                    nazwa: '🚗 Spawn Willarda',
+                    svg: `<svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="background:rgba(20,23,32,0.9); border-radius:50%; padding:5px; box-shadow:0 4px 12px rgba(0,0,0,0.7); border:2px solid #3b82f6;"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18 10l-2.5-4.5c-.3-.5-.9-.8-1.5-.8H10c-.6 0-1.2.3-1.5.8L6 10l-2.5 1.1C2.7 12.3 2 13.1 2 14v3c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>`
+                };
+            case 'officer': 
+                return { 
+                    nazwa: '👤 Spawn Officera',
+                    svg: `<svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="background:rgba(20,23,32,0.9); border-radius:50%; padding:5px; box-shadow:0 4px 12px rgba(0,0,0,0.7); border:2px solid #eab308;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`
+                };
+            case 'szeryf': 
+                return { 
+                    nazwa: '👮 Spawn Szeryfa',
+                    svg: `<svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="background:rgba(168,85,247,0.85); border-radius:50%; padding:5px; box-shadow:0 4px 12px rgba(0,0,0,0.7); border:2px solid #ffffff;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`
+                };
+            default: 
+                return { 
+                    nazwa: '📍 Punkt Fabularny',
+                    svg: `<svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#00b894" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="background:rgba(20,23,32,0.9); border-radius:50%; padding:5px; box-shadow:0 4px 12px rgba(0,0,0,0.7); border:2px solid #00b894;"><circle cx="12" cy="12" r="10"/></svg>`
+                };
         }
     }
 
-    // Generowanie pinezki SVG w wybranym kolorze
     function stwórzIkonęFabuły(typ) {
         const styl = pobierzStylTypu(typ);
-        const pinSvg = `
-            <svg width="30" height="42" viewBox="0 0 384 512" xmlns="http://www.w3.org/2000/svg">
-                <path fill="${styl.kolor}" stroke="#ffffff" stroke-width="20" d="M172.268 501.67C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0zM192 272c44.183 0 80-35.817 80-80s-35.817-80-80-80-80 35.817-80 80 35.817 80 80 80z"/>
-            </svg>
-        `;
         return L.divIcon({
-            className: 'custom-google-pin',
-            html: pinSvg,
-            iconSize: [30, 42],
-            iconAnchor: [15, 42],
-            popupAnchor: [0, -38]
+            className: 'custom-vector-icon',
+            html: styl.svg,
+            iconSize: [38, 38],
+            iconAnchor: [19, 19],
+            popupAnchor: [0, -19]
         });
     }
 
@@ -383,7 +393,7 @@
         const typeSelect = document.getElementById('item-type');
         const descInput = document.getElementById('item-desc');
         
-        const typeVal = typeSelect ? typeSelect.value : "auto";
+        const typeVal = typeSelect ? typeSelect.value : "willard";
         const descVal = descInput ? descInput.value.trim() : "Opis spawnu...";
         
         const jsonLine = `  {"type": "${typeVal}", "y": ${y}, "x": ${x}, "desc": "${descVal}"},`;
@@ -401,7 +411,7 @@
     function stwórzCelownikX() {
         return L.divIcon({
             className: 'admin-crosshair',
-            html: '<div style="font-size: 26px; font-weight: bold; color: #ff5252; text-shadow: 0 0 4px #000; text-align: center; line-height: 24px; width: 24px; height: 24px;">✕</div>',
+            html: '<div style="font-size: 26px; font-weight: bold; color: #ff5252; text-shadow: 0 0 4px #000, 0 0 4px #000; text-align: center; line-height: 24px; width: 24px; height: 24px;">✕</div>',
             iconSize: [24, 24],
             iconAnchor: [12, 12]
         });
