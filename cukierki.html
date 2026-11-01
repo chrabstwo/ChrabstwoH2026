@@ -306,7 +306,7 @@
 </head>
 <body>
 
-<!-- Licznik na górze po środku -->
+<!-- Licznik na górze po środku (tylko zebrane - zielone) -->
 <div id="counter-box">
     🍬 Odwiedzeni NPC: <span id="cnt-total">0</span>
 </div>
@@ -460,11 +460,12 @@
     }
 
     function aktualizujLicznik() {
-        let odwiedzeniCount = 0;
+        let zebraneCount = 0;
+        // Zliczamy tylko te, które mają stan 'mam' (zielone)
         Object.values(stanyCukierkow).forEach(v => {
-            if (v === 'mam' || v === 'brak') odwiedzeniCount++;
+            if (v === 'mam') zebraneCount++;
         });
-        document.getElementById('cnt-total').innerText = odwiedzeniCount;
+        document.getElementById('cnt-total').innerText = zebraneCount;
     }
 
     function odswiezMarkeryNaMapie() {
