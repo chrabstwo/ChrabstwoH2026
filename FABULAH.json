@@ -1,6 +1,11 @@
 [
-  {"type": "willard", "y": 500, "x": 1200, "id": 1, "desc": "Autko eventowe pod budynkiem."},
-  {"type": "officer", "y": 600, "x": 1300, "id": 2, "desc": "Postać zlecająca pierwsze zadanie."},
+  {"type": "willard", "y": 1328, "x": 1751, "desc": ""},
+  {"type": "willard", "y": 1442, "x": 1935, "desc": ""},
+  {"type": "willard", "y": 1887, "x": 1772, "desc": ""},
+  {"type": "willard", "y": 1787, "x": 1468, "desc": ""},
+  {"type": "officer", "y": 626, "x": 1691, "desc": ""},
+  {"type": "officer", "y": 602, "x": 1703, "desc": ""},
+  {"type": "officer", "y": 542, "x": 1676, "desc": ""},
   {"type": "szeryf", "y": 1491, "x": 1134, "desc": ""},
   {"type": "szeryf", "y": 1338, "x": 1075, "desc": ""},
   {"type": "szeryf", "y": 1396, "x": 832, "desc": ""},
