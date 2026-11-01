@@ -19,131 +19,251 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         html, body, #map {
-            width: 100%; height: 100%; margin: 0; padding: 0;
-            background-color: #0b0e14; overflow: hidden;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: #0b0e14;
+            overflow: hidden;
         }
         
-        /* Licznik odwiedzonych NPC na górze strony */
-        #top-counter {
-            position: fixed; top: 15px; left: 50%; transform: translateX(-50%);
-            background: rgba(30, 34, 45, 0.95); border: 1px solid #3b82f6;
-            padding: 10px 24px; border-radius: 30px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.7); z-index: 1000;
-            font-family: sans-serif; color: white; font-weight: bold; font-size: 14px;
-            pointer-events: none; text-align: center; backdrop-filter: blur(4px);
+        /* Licznik na górze po środku */
+        #counter-box {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e222d;
+            border: 1px solid #2a2e3d;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+            z-index: 1000;
+            font-family: sans-serif;
+            color: #e2e8f0;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-align: center;
+        }
+        #counter-box span {
+            color: #00b894;
         }
 
-        /* Sidebar menu w lewym dolnym rogu */
+        /* Styl mini menu w lewym dolnym rogu */
         #sidebar {
-            position: fixed; bottom: 20px; left: 20px; width: 280px;
-            background: #1e222d; border: 1px solid #2a2e3d; border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.6); z-index: 1000;
-            font-family: sans-serif; color: #e2e8f0; padding: 16px; box-sizing: border-box;
-            max-height: 85vh; overflow-y: auto;
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 270px;
+            background: #1e222d;
+            border: 1px solid #2a2e3d;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+            z-index: 1000;
+            font-family: sans-serif;
+            color: #e2e8f0;
+            padding: 16px;
+            box-sizing: border-box;
+            max-height: 85vh;
+            overflow-y: auto;
         }
-        #sidebar h2 { font-size: 15px; margin: 0 0 12px 0; color: #3b82f6; text-align: center; }
-        
+        #sidebar h2 {
+            font-size: 15px;
+            margin: 0 0 12px 0;
+            color: #00b894;
+            text-align: center;
+            font-weight: 600;
+        }
         .menu-section {
-            margin-bottom: 14px; border-bottom: 1px solid #2a2e3d; padding-bottom: 12px;
+            margin-bottom: 14px;
+            border-bottom: 1px solid #2a2e3d;
+            padding-bottom: 12px;
         }
-        .menu-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .menu-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
         .menu-section h4 {
-            font-size: 11px; color: #94a3b8; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px;
+            font-size: 12px;
+            color: #94a3b8;
+            margin: 0 0 8px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
+        /* Przyciski nawigacyjne między mapami */
         .back-btn {
-            display: block; width: 100%; padding: 8px; background: #141720;
-            border: 1px solid #2a2e3d; color: white; font-weight: bold;
-            border-radius: 6px; cursor: pointer; font-size: 12px; text-align: center;
-            text-decoration: none; box-sizing: border-box; margin-bottom: 6px;
+            display: block;
+            width: 100%;
+            padding: 8px;
+            background: #141720;
+            border: 1px solid #2a2e3d;
+            color: white;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            text-align: center;
+            text-decoration: none;
+            box-sizing: border-box;
+            margin-bottom: 8px;
         }
-        .back-btn:hover { background: #1e222d; border-color: #3b82f6; }
+        .back-btn:hover { 
+            background: #1e222d; 
+            border-color: #00b894; 
+        }
 
         .admin-box input, .admin-box textarea {
-            width: 100%; box-sizing: border-box; padding: 8px 10px; margin-bottom: 8px;
-            background: #141720; border: 1px solid #2a2e3d; color: white;
-            border-radius: 6px; font-size: 12px; outline: none; font-family: sans-serif;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px 10px;
+            margin-bottom: 8px;
+            background: #141720;
+            border: 1px solid #2a2e3d;
+            color: white;
+            border-radius: 6px;
+            font-size: 12px;
+            outline: none;
+            font-family: sans-serif;
+            resize: vertical;
         }
-        .admin-box button {
-            width: 100%; padding: 8px; background: #3b82f6; border: none;
-            color: white; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 12px;
+        .admin-box input:focus, .admin-box textarea:focus {
+            border-color: #00b894;
         }
-        .admin-box button:hover { background: #2563eb; }
+        .admin-box button, .user-action-btn {
+            width: 100%;
+            padding: 8px;
+            background: #00b894;
+            border: none;
+            color: white;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .admin-box button:hover, .user-action-btn:hover { background: #019875; }
+        .admin-status {
+            font-size: 12px;
+            margin-top: 6px;
+            text-align: center;
+        }
 
         /* Lista robocza dodanych lokacji w panelu admina */
         #temp-list {
-            max-height: 120px; overflow-y: auto; background: #141720;
-            border: 1px solid #2a2e3d; border-radius: 6px; padding: 6px;
-            font-size: 11px; margin-bottom: 8px; color: #cbd5e1;
+            max-height: 110px;
+            overflow-y: auto;
+            background: #141720;
+            border: 1px solid #2a2e3d;
+            border-radius: 6px;
+            padding: 6px;
+            font-size: 11px;
+            margin-bottom: 8px;
+            color: #cbd5e1;
         }
         .temp-item {
-            padding: 4px 0; border-bottom: 1px dashed #2a2e3d;
-            display: flex; justify-content: space-between; align-items: center;
+            padding: 3px 0;
+            border-bottom: 1px dashed #2a2e3d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        /* Styling Popupów Leaflet */
+        /* --- USUNIĘCIE BIAŁYCH RAMKI I STRZAŁKI W LEAFLET --- */
         .leaflet-popup-content-wrapper, .leaflet-popup-tip {
-            background: transparent !important; box-shadow: none !important; padding: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            padding: 0 !important;
         }
-        .leaflet-popup-content { margin: 0 !important; line-height: normal !important; }
-        .leaflet-container a.leaflet-popup-close-button { display: none !important; }
+        .leaflet-popup-content {
+            margin: 0 !important;
+            line-height: normal !important;
+        }
+        .leaflet-container a.leaflet-popup-close-button {
+            display: none !important;
+        }
 
+        /* Styl ciemnego okienka popup */
         .popup-box {
-            font-family: sans-serif; color: #e2e8f0; background: #1e222d;
-            padding: 14px; border-radius: 10px; width: 230px;
-            border: 1px solid #2a2e3d; box-shadow: 0 8px 24px rgba(0,0,0,0.7);
+            font-family: sans-serif;
+            color: #e2e8f0;
+            background: #1e222d;
+            padding: 14px;
+            border-radius: 10px;
+            width: 240px;
+            border: 1px solid #2a2e3d;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.7);
         }
-        .popup-btns { display: flex; gap: 6px; margin-top: 10px; }
+        .popup-btns {
+            display: flex;
+            gap: 6px;
+            margin-top: 10px;
+        }
         .popup-btn {
-            flex: 1; padding: 7px; border: none; border-radius: 6px;
-            font-weight: bold; font-size: 11px; cursor: pointer; color: white; text-align: center;
+            flex: 1;
+            padding: 7px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 11px;
+            cursor: pointer;
+            color: white;
+            text-align: center;
         }
-        .btn-mam { background: #10b981; }
-        .btn-mam:hover { background: #059669; }
+        .btn-mam { background: #00b894; }
+        .btn-mam:hover { background: #019875; }
         .btn-brak { background: #ef4444; }
         .btn-brak:hover { background: #dc2626; }
-        .btn-reset { background: #64748b; }
+        .btn-reset { background: #334155; }
         .btn-reset:hover { background: #475569; }
     </style>
 </head>
 <body>
 
-<!-- Licznik na górze -->
-<div id="top-counter">
-    🍬 Odwiedzeni NPC: <span id="cnt-total" style="color: #3b82f6;">0</span> 
-    (<span style="color:#10b981;">Mam: <span id="cnt-mam">0</span></span> | 
+<!-- Licznik na górze po środku -->
+<div id="counter-box">
+    🍬 Odwiedzeni NPC: <span id="cnt-total">0</span> 
+    (<span style="color:#00b894;">Mam: <span id="cnt-mam">0</span></span> | 
      <span style="color:#ef4444;">Brak: <span id="cnt-brak">0</span></span>)
 </div>
 
+<!-- Mini menu w lewym dolnym rogu -->
 <div id="sidebar">
     <h2>Chrabstwo 4Life</h2>
     
+    <!-- Wybór eventów -->
     <div class="menu-section">
         <h4>Wybierz event</h4>
-        <a href="map.html" class="back-btn">🎃 Dynie Halloween 2026</a>
-        <a href="fabula.html" class="back-btn">📖 Fabuła Halloween 2026</a>
-        <div style="font-size: 13px; color: #3b82f6; padding: 6px 0; background: #141720; text-align: center; border-radius: 6px; border: 1px solid #3b82f6; font-weight: bold;">
+        <a href="map.html" class="back-btn" style="text-decoration: none;">🎃 Dynie Halloween 2026</a>
+        <a href="fabula.html" class="back-btn" style="text-decoration: none;">📖 Fabuła Halloween 2026</a>
+        <div style="font-size: 13px; color: #00b894; padding: 6px 0; background: #141720; text-align: center; border-radius: 6px; border: 1px solid #00b894; font-weight: bold; margin-top: 8px;">
             🍬 Cukierki (NPC) 2026
         </div>
     </div>
 
-    <!-- Panel Administratora z Szybkim Dodawaniem -->
+    <!-- Panel Administratora ze Szybkim Koszykiem -->
     <div class="menu-section admin-box">
         <h4>Panel Administratora</h4>
         <div id="admin-login-view">
             <input type="password" id="admin-pass" placeholder="Hasło admina">
             <button id="admin-login-btn">Zaloguj</button>
-            <div id="admin-err" style="color: #ff5252; display: none; font-size: 11px; text-align: center; margin-top: 4px;">Błędne hasło!</div>
+            <div id="admin-err" class="admin-status" style="color: #ff5252; display: none;">Błędne hasło!</div>
         </div>
         <div id="admin-logged-view" style="display: none;">
-            <div style="color: #3b82f6; font-weight: bold; margin-bottom: 6px; font-size: 11px;">✓ Koszyk lokacji aktywny</div>
+            <div class="admin-status" style="color: #00b894; font-weight: bold; margin-bottom: 6px;">✓ Koszyk lokacji aktywny</div>
             
-            <div style="font-size: 10px; color: #94a3b8; margin-bottom: 4px;">Robocza lista tej sesji:</div>
+            <div style="font-size: 11px; color: #94a3b8; margin-bottom: 4px;">Robocza lista tej sesji:</div>
             <div id="temp-list"><i>Brak nowych punktów</i></div>
             
             <button id="export-json-btn" style="background: #10b981; margin-bottom: 6px;">📋 EKSPORTUJ CAŁY JSON</button>
             <button id="admin-logout-btn" style="background: #ef4444;">Zablokuj panel</button>
         </div>
+    </div>
+
+    <!-- Regulamin / Nota informacyjna -->
+    <div class="menu-section" style="font-size: 10px; color: #64748b; line-height: 1.3; text-align: justify; border-bottom: none; margin-bottom: 0; padding-bottom: 0;">
+        <b>Nota informacyjna:</b> Narzędzie wyłącznie do użytku wewnętrznego organizacji Chrabstwo. Zakaz handlu i dystrybucji komercyjnej.
     </div>
 </div>
 
@@ -162,7 +282,7 @@
     const adminErr = document.getElementById("admin-err");
     const tempListEl = document.getElementById("temp-list");
 
-    let koszykPunktów = []; // Tymczasowa tablica na punkty z danej sesji
+    let koszykPunktów = []; // Tablica robocza dla nowych punktów
 
     function odswiezPanelAdmina() {
         if (czyAdmin) {
@@ -182,7 +302,9 @@
             adminErr.style.display = "none";
             adminPassInput.value = "";
             odswiezPanelAdmina();
-        } else { adminErr.style.display = "block"; }
+        } else {
+            adminErr.style.display = "block";
+        }
     });
 
     adminLogoutBtn.addEventListener("click", () => {
@@ -191,13 +313,16 @@
         odswiezPanelAdmina();
     });
 
-    // --- LEAFLET MAPA CONFIG ---
+    // --- USTAWIANIE GRANIC MAPY ---
     const imageBounds = [[0, 0], [2048, 2048]]; 
     const cameraBounds = [[-300, -300], [2348, 2348]]; 
 
     const map = L.map('map', {
-        crs: L.CRS.Simple, minZoom: -1, maxZoom: 3,
-        maxBounds: cameraBounds, maxBoundsViscosity: 0.7 
+        crs: L.CRS.Simple,
+        minZoom: -1,
+        maxZoom: 3,
+        maxBounds: cameraBounds,
+        maxBoundsViscosity: 0.7 
     });
 
     L.imageOverlay('map_hq.jpg', imageBounds).addTo(map);
@@ -207,28 +332,30 @@
     let warstwyMarkerow = [];
     let tymczasowyCelownik = null;
 
-    // Przechowywanie stanów zebrania w localStorage (ID -> 'mam' | 'brak')
-    let stanyCukierkow = JSON.parse(localStorage.getItem('stany_cukierkow_2026') || '{}');
+    let stanyCukierkow = JSON.parse(localStorage.getItem('chrabstwo_stany_cukierkow') || '{}');
 
-    // Ikona wektorowa Cukierka (Domyślny, Mam, Brak)
+    // Ikona wektorowa Cukierka (Szary domyślny, Zielony 'mam', Czerwony 'brak')
     function stwórzIkonęCukierka(stan) {
-        let kolor = '#94a3b8'; // Domyślny - szary (nie mam)
+        let kolor = '#94a3b8'; // Domyślny - szary
         let emotka = '🍬';
 
         if (stan === 'mam') {
-            kolor = '#10b981'; // Zielony
+            kolor = '#00b894'; // Zielony z motywu map.html
         } else if (stan === 'brak') {
-            kolor = '#ef4444'; // Czerwony (Nie mam / pusto)
+            kolor = '#ef4444'; // Czerwony
             emotka = '❌';
         }
 
-        const svg = `<div style="background:rgba(20,23,32,0.9); border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(0,0,0,0.7); border:2px solid ${kolor}; font-size:16px;">
+        const svg = `<div style="background:rgba(20,23,32,0.9); border-radius:50%; width:38px; height:38px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(0,0,0,0.7); border:2px solid ${kolor}; font-size:16px;">
             ${emotka}
         </div>`;
 
         return L.divIcon({
             className: 'custom-candy-icon',
-            html: svg, iconSize: [36, 36], iconAnchor: [18, 18], popupAnchor: [0, -18]
+            html: svg,
+            iconSize: [38, 38],
+            iconAnchor: [19, 19],
+            popupAnchor: [0, -19]
         });
     }
 
@@ -256,13 +383,13 @@
 
             const popupContent = `
                 <div class="popup-box">
-                    <b style="font-size: 13px; color: #3b82f6;">🍬 Cukierki NPC #${item.id}</b><br>
-                    <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Y: <b>${item.y}</b>, X: <b>${item.x}</b></div>
-                    <div style="font-size: 12px; color: #cbd5e1; margin: 8px 0;">${item.desc || 'Brak opisu lokacji.'}</div>
+                    <b style="font-size: 13px; color: #f8fafc;">🍬 Cukierki NPC #${item.id}</b><br>
+                    <div style="font-size: 11px; color: #94a3b8; margin: 2px 0 6px 0;">Y: <b>${item.y}</b>, X: <b>${item.x}</b></div>
+                    <div style="font-size: 12px; color: #cbd5e1; margin: 8px 0; line-height: 1.4;">${item.desc || 'Brak opisu lokacji.'}</div>
                     
                     <div class="popup-btns">
                         <button class="popup-btn btn-mam" onclick="zmienStanCukierka(${item.id}, 'mam')">🍬 MAM</button>
-                        <button class="popup-btn btn-brak" onclick="zmienStanCukierka(${item.id}, 'brak')">❌ NIE MAM</button>
+                        <button class="popup-btn btn-brak" onclick="zmienStanCukierka(${item.id}, 'brak')">❌ BRAK</button>
                         <button class="popup-btn btn-reset" onclick="zmienStanCukierka(${item.id}, 'reset')">🔄</button>
                     </div>
                 </div>
@@ -282,12 +409,12 @@
         } else {
             stanyCukierkow[id] = stan;
         }
-        localStorage.setItem('stany_cukierkow_2026', JSON.stringify(stanyCukierkow));
+        localStorage.setItem('chrabstwo_stany_cukierkow', JSON.stringify(stanyCukierkow));
         map.closePopup();
         odswiezMarkeryNaMapie();
     };
 
-    // Wczytanie plików cukierki.json
+    // Wczytanie bazy cukierków
     fetch('cukierki.json')
         .then(res => res.json())
         .then(dane => {
@@ -305,7 +432,6 @@
         const nowyObiekt = { id: nextId, y: y, x: x, desc: descVal };
         koszykPunktów.push(nowyObiekt);
 
-        // Natychmiastowy podgląd nowego punktu na mapie
         const tmpMarker = L.marker([y, x], { icon: stwórzIkonęCukierka('nieznany') }).addTo(map);
         warstwyMarkerow.push(tmpMarker);
 
@@ -321,7 +447,7 @@
         tempListEl.innerHTML = koszykPunktów.map((p, idx) => `
             <div class="temp-item">
                 <span><b>#${p.id}</b> (${p.y}, ${p.x})</span>
-                <span style="color:#ef4444; cursor:pointer;" onclick="usunZKoszyka(${idx})">✖</span>
+                <span style="color:#ef4444; cursor:pointer; font-weight:bold;" onclick="usunZKoszyka(${idx})" title="Usuń z koszyka">✕</span>
             </div>
         `).join('');
     }
@@ -331,26 +457,26 @@
         odswiezPodgladKoszyka();
     };
 
-    // Eksport całego JSON-a do schowka
     document.getElementById('export-json-btn').addEventListener('click', () => {
         if (koszykPunktów.length === 0) {
-            alert('Koszyk jest pusty! Dodaj najpierw punkty z mapy.');
+            alert('Koszyk jest pusty! Dodaj najpierw punkty klikając na mapę.');
             return;
         }
 
         const polaczonyJSON = JSON.stringify([...wszystkieCukierki, ...koszykPunktów], null, 2);
         
         navigator.clipboard.writeText(polaczonyJSON).then(() => {
-            alert(`Pomyślnie skopiowano ${koszykPunktów.length} nowych punktów! Wklej całą zawartość do pliku cukierki.json.`);
+            alert(`Pomyślnie skopiowano ${koszykPunktów.length} nowych punktów do schowka! Wklej je teraz do pliku cukierki.json.`);
         });
     });
 
-    // Celownik Admina
+    // Celownik administratora
     function stwórzCelownikX() {
         return L.divIcon({
             className: 'admin-crosshair',
-            html: '<div style="font-size: 26px; font-weight: bold; color: #3b82f6; text-shadow: 0 0 4px #000; text-align: center; line-height: 24px;">✕</div>',
-            iconSize: [24, 24], iconAnchor: [12, 12]
+            html: '<div style="font-size: 26px; font-weight: bold; color: #ff5252; text-shadow: 0 0 4px #000, 0 0 4px #000; text-align: center; line-height: 24px; width: 24px; height: 24px;">✕</div>',
+            iconSize: [24, 24],
+            iconAnchor: [12, 12]
         });
     }
 
@@ -360,22 +486,28 @@
         const y = Math.round(e.latlng.lat);
         const x = Math.round(e.latlng.lng);
 
-        if (tymczasowyCelownik) map.removeLayer(tymczasowyCelownik);
+        if (tymczasowyCelownik) {
+            map.removeLayer(tymczasowyCelownik);
+        }
 
         tymczasowyCelownik = L.marker([e.latlng.lat, e.latlng.lng], {
-            icon: stwórzCelownikX(), interactive: false
+            icon: stwórzCelownikX(),
+            interactive: false
         }).addTo(map);
 
         const popupContent = `
             <div class="popup-box">
-                <div style="font-size: 11px; color: #94a3b8; margin-bottom: 6px;">Współrzędne: Y: <b>${y}</b>, X: <b>${x}</b></div>
+                <div style="font-size: 11px; color: #94a3b8; margin-bottom: 4px;">Współrzędne: Y: <b>${y}</b>, X: <b>${x}</b></div>
                 <label style="font-size: 11px; color: #cbd5e1;">Opis lokacji z SS:</label>
-                <textarea id="candy-desc" rows="2" placeholder="np. Dom przy kościele..."></textarea>
-                <button onclick="dodajDoKoszyka(${y}, ${x})">➕ DODAJ DO KOSZYKA</button>
+                <textarea id="candy-desc" rows="2" placeholder="np. Dom przy basenie..."></textarea>
+                <button onclick="dodajDoKoszyka(${y}, ${x})" style="margin-top: 4px;">➕ DODAJ DO KOSZYKA</button>
             </div>
         `;
 
-        L.popup().setLatLng(e.latlng).setContent(popupContent).openOn(map);
+        L.popup()
+            .setLatLng(e.latlng)
+            .setContent(popupContent)
+            .openOn(map);
     });
 
     map.on('popupclose', function() {
