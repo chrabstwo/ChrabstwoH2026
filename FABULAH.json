@@ -17,5 +17,10 @@
   {"type": "szeryf", "y": 1476, "x": 882, "desc": ""},
   {"type": "szkola", "y": 1488, "x": 357, "desc": ""},
   {"type": "budynek_szeryfa", "y": 1359, "x": 947, "desc": ""},
-  {"type": "kilof", "y": 451, "x": 400, "desc": "Pierwszy hangar na prawo. (jak na mapie)"}
+  {"type": "kilof", "y": 451, "x": 400, "desc": "Pierwszy hangar na prawo. (jak na mapie)"},
+  {"type": "pracownik", "y": 1331, "x": 1211, "desc": "Pracownik kanionu, do którego należy podejść i porozmawiać po przyjechaniu z domu rodzinnego."},
+  {"type": "pracownik", "y": 1318, "x": 1145, "desc": "Pracownik kanionu, do którego należy podejść i porozmawiać po przyjechaniu z domu rodzinnego."},
+  {"type": "noz", "y": 1278, "x": 1264, "desc": "Nóż leży na skraju przepaści kanionu. Aby się do niego dostać należy od strony autostrady przeskoczyć płot.
+Nóż należy znaleźć po rozmowie z dwoma pracownikami kanionu i gdy jest tutaj obszar zaznaczony na mapie."},
+  {"type": "kasyno", "y": 1369, "x": 1709, "desc": ""}
 ]
