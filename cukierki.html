@@ -140,6 +140,7 @@
             border-radius: 6px;
             cursor: pointer;
             font-size: 13px;
+            margin-bottom: 6px;
         }
         .admin-box button:hover, .user-action-btn:hover { background: #019875; }
         .admin-status {
@@ -282,11 +283,6 @@
             text-align: center;
         }
         .not-collected-btn:hover { background: #475569; }
-        .not-collected-btn.active {
-            background: #1e222d;
-            border: 1px solid #475569;
-            color: #94a3b8;
-        }
 
         /* --- MODAL DO POWIĘKSZANIA ZDJĘĆ --- */
         #image-modal {
@@ -330,6 +326,13 @@
         </div>
     </div>
 
+    <!-- Przyciski użytkownika (Ukryj zebrane) -->
+    <div class="menu-section">
+        <h4>Opcje mapy</h4>
+        <button id="toggle-hide-collected" class="user-action-btn" style="background: #334155; margin-bottom: 6px;">👁️ Ukryj zebrane</button>
+        <button id="reset-progress-btn" class="user-action-btn" style="background: #ef4444; margin-bottom: 0;">🔄 Zresetuj lokacje</button>
+    </div>
+
     <!-- Panel Administratora ze Szybką Listą -->
     <div class="menu-section admin-box">
         <h4>Panel Administratora</h4>
@@ -345,7 +348,7 @@
             <div id="temp-list"><i>Brak nowych punktów</i></div>
             
             <button id="export-json-btn" style="background: #10b981; margin-bottom: 6px;">📋 EKSPORTUJ CAŁY JSON</button>
-            <button id="admin-logout-btn" style="background: #ef4444;">Zablokuj panel</button>
+            <button id="admin-logout-btn" style="background: #ef4444; margin-bottom: 0;">Zablokuj panel</button>
         </div>
     </div>
 
@@ -361,6 +364,7 @@
 <script>
     const HASLO_ADMINA = "admin2026"; 
     let czyAdmin = sessionStorage.getItem("admin_zalogowany") === "true";
+    let ukryjZebrane = localStorage.getItem("chrabstwo_ukryj_zebrane") === "true";
 
     const adminLoginView = document.getElementById("admin-login-view");
     const adminLoggedView = document.getElementById("admin-logged-view");
@@ -369,6 +373,33 @@
     const adminLogoutBtn = document.getElementById("admin-logout-btn");
     const adminErr = document.getElementById("admin-err");
     const tempListEl = document.getElementById("temp-list");
+    const toggleHideBtn = document.getElementById("toggle-hide-collected");
+
+    function aktualizujPrzyciskUkrywania() {
+        if (ukryjZebrane) {
+            toggleHideBtn.innerText = "👁️ Pokaż zebrane";
+            toggleHideBtn.style.background = "#00b894";
+        } else {
+            toggleHideBtn.innerText = "👁️ Ukryj zebrane";
+            toggleHideBtn.style.background = "#334155";
+        }
+    }
+    aktualizujPrzyciskUkrywania();
+
+    toggleHideBtn.addEventListener("click", () => {
+        ukryjZebrane = !ukryjZebrane;
+        localStorage.setItem("chrabstwo_ukryj_zebrane", ukryjZebrane);
+        aktualizujPrzyciskUkrywania();
+        odswiezMarkeryNaMapie();
+    });
+
+    document.getElementById("reset-progress-btn").addEventListener("click", () => {
+        if (confirm("Czy na pewno chcesz zresetować postęp wszystkich zebranych i ukrytych lokacji?")) {
+            localStorage.removeItem("chrabstwo_stany_cukierkow");
+            stanyCukierkow = {};
+            odswiezMarkeryNaMapie();
+        }
+    });
 
     let koszykPunktów = []; // Tablica robocza dla nowych punktów
 
@@ -434,14 +465,12 @@
         document.getElementById("image-modal").style.display = "none";
     };
 
-    // Ikona wektorowa (Google Pin 1:1 z dyniami)
+    // Ikona wektorowa (Google Pin)
     function stwórzIkonęPinezki(stan) {
         let kolor = '#ff5252'; // Domyślnie czerwony (niezebrane)
 
         if (stan === 'mam') {
             kolor = '#00b894'; // Zielony (zebrane)
-        } else if (stan === 'brak') {
-            kolor = '#334155'; // Ciemnoszary (nie mam)
         }
 
         const pinSvg = `
@@ -471,19 +500,20 @@
         warstwyMarkerow.forEach(m => map.removeLayer(m));
         warstwyMarkerow = [];
 
+        // 1. Wyświetl markery z oficjalnej bazy
         wszystkieCukierki.forEach((item) => {
             const identyfikator = String(item.id);
             const stan = stanyCukierkow[identyfikator] || 'nieznany';
+
+            // Jeśli użytkownik zaznaczył "Nie mam" ('brak') LUB włączono "Ukryj zebrane" dla punktów zebranych ('mam'), pomijamy wyświetlanie
+            if (stan === 'brak') return;
+            if (ukryjZebrane && stan === 'mam') return;
+
             const marker = L.marker([item.y, item.x], { icon: stwórzIkonęPinezki(stan) });
 
             const jestZebrana = (stan === 'mam');
-            const jestBrak = (stan === 'brak');
-
             const przyciskZebraneTekst = jestZebrana ? "Oznacz jako niezebrane" : "✓ Zebrane";
             const przyciskZebraneKlasa = jestZebrana ? "collected-btn uncollect" : "collected-btn";
-
-            const przyciskBrakTekst = jestBrak ? "Oznacz jako niezebrane" : "❌ Nie mam";
-            const przyciskBrakKlasa = jestBrak ? "not-collected-btn active" : "not-collected-btn";
 
             const popupContent = `
                 <div class="popup-box">
@@ -492,10 +522,26 @@
                     <img src="${item.img}" class="popup-img" alt="Screen lokalizacji" onclick="pokazZdjecie('${item.img}')" onerror="this.style.display='none'" title="Kliknij, aby powiększyć">
                     
                     <button class="${przyciskZebraneKlasa}" onclick="przelaczStanCukierka('${identyfikator}', 'mam')">${przyciskZebraneTekst}</button>
-                    <button class="${przyciskBrakKlasa}" onclick="przelaczStanCukierka('${identyfikator}', 'brak')">${przyciskBrakTekst}</button>
+                    <button class="not-collected-btn" onclick="przelaczStanCukierka('${identyfikator}', 'brak')">❌ Nie mam</button>
                 </div>
             `;
 
+            marker.bindPopup(popupContent);
+            marker.addTo(map);
+            warstwyMarkerow.push(marker);
+        });
+
+        // 2. Wyświetl tymczasowe markery dodane do koszyka sesji przez admina
+        koszykPunktów.forEach((item) => {
+            const marker = L.marker([item.y, item.x], { icon: stwórzIkonęPinezki('nieznany') });
+            
+            const popupContent = `
+                <div class="popup-box">
+                    <b style="font-size: 13px; color: #f8fafc;">🍬 Nowy punkt #${item.id}</b><br>
+                    <div style="font-size: 11px; color: #94a3b8; margin: 2px 0 6px 0;">Y: <b>${item.y}</b>, X: <b>${item.x}</b></div>
+                    <div style="font-size: 11px; color: #00b894;">Punkt roboczy w koszyku sesji</div>
+                </div>
+            `;
             marker.bindPopup(popupContent);
             marker.addTo(map);
             warstwyMarkerow.push(marker);
@@ -522,7 +568,6 @@
             wszystkieCukierki = dane;
 
             // --- AUTOMATYCZNE CZYSZCZENIE USUNIĘTYCH LOKACJI ---
-            // Usuwa z LocalStorage stany dla ID, których nie ma już w pliku JSON
             const dostepneId = dane.map(d => String(d.id));
             let zmodyfikowano = false;
             
@@ -553,10 +598,8 @@
         const nowyObiekt = { id: nextId, y: y, x: x, img: imgUrl };
         koszykPunktów.push(nowyObiekt);
 
-        const tmpMarker = L.marker([y, x], { icon: stwórzIkonęPinezki('nieznany') }).addTo(map);
-        warstwyMarkerow.push(tmpMarker);
-
         odswiezPodgladKoszyka();
+        odswiezMarkeryNaMapie();
         map.closePopup();
     };
 
@@ -576,6 +619,7 @@
     window.usunZKoszyka = function(idx) {
         koszykPunktów.splice(idx, 1);
         odswiezPodgladKoszyka();
+        odswiezMarkeryNaMapie(); // Natychmiast usuwa marker tymczasowy z mapy
     };
 
     document.getElementById('export-json-btn').addEventListener('click', () => {
