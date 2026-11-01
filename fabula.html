@@ -357,6 +357,11 @@
                     nazwa: '🏫 Szkoła',
                     svg: `<svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="background:rgba(20,23,32,0.9); border-radius:50%; padding:5px; box-shadow:0 4px 12px rgba(0,0,0,0.7); border:2px solid #06b6d4;"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>`
                 };
+            case 'budynek_szeryfa': 
+                return { 
+                    nazwa: '🏢 Budynek szeryfa',
+                    svg: `<svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="background:rgba(20,23,32,0.9); border-radius:50%; padding:5px; box-shadow:0 4px 12px rgba(0,0,0,0.7); border:2px solid #a855f7;"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M8 10h.01"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 14h.01"/><path d="M16 14h.01"/><path d="M12 14h.01"/></svg>`
+                };
             default: 
                 return { 
                     nazwa: '📍 Punkt Fabularny',
@@ -465,6 +470,7 @@
                     <option value="chatka_chilliad">Chatka Mount Chilliad</option>
                     <option value="dom_prokuratora">Dom prokuratora</option>
                     <option value="szkola">Szkoła</option>
+                    <option value="budynek_szeryfa">Budynek szeryfa</option>
                 </select>
 
                 <label style="font-size: 11px; color: #cbd5e1;">Krótki opis:</label>
