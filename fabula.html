@@ -322,9 +322,9 @@
     // Kolory i ikony w zależności od typu obiektu
     function pobierzStylTypu(typ) {
         switch(typ) {
-            case 'auto': return { kolor: '#3b82f6', nazwa: '🚗 Spawn Pojazdu' };       // Niebieski
-            case 'npc': return { kolor: '#eab308', nazwa: '👤 Spawn NPC' };           // Żółty
-            case 'officer': return { kolor: '#a855f7', nazwa: '⭐ Spawn Officera' };   // Fioletowy
+            case 'willard': return { kolor: '#3b82f6', nazwa: '🚗 Spawn Willarda' };       // Niebieski
+            case 'officer': return { kolor: '#eab308', nazwa: '👤 Spawn Officera' };           // Żółty
+            case 'szeryf': return { kolor: '#a855f7', nazwa: '👮 Spawn Szeryfa' };   // Fioletowy
             default: return { kolor: '#00b894', nazwa: '📍 Punkt Fabularny' };
         }
     }
@@ -428,9 +428,9 @@
                 
                 <label style="font-size: 11px; color: #cbd5e1;">Typ obiektu:</label>
                 <select id="item-type">
-                    <option value="auto">Spawn Pojazdu</option>
-                    <option value="npc">Spawn NPC</option>
+                    <option value="willard">Spawn Willarda</option>
                     <option value="officer">Spawn Officera</option>
+                    <option value="szeryf">Spawn Szeryfa</option>
                 </select>
 
                 <label style="font-size: 11px; color: #cbd5e1;">Krótki opis:</label>
