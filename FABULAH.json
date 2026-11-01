@@ -15,5 +15,6 @@
   {"type": "szeryf", "y": 1396, "x": 832, "desc": ""},
   {"type": "szeryf", "y": 1476, "x": 882, "desc": ""},
   {"type": "szkola", "y": 1488, "x": 357, "desc": ""},
-  {"type": "budynek_szeryfa", "y": 1359, "x": 947, "desc": ""}
+  {"type": "budynek_szeryfa", "y": 1359, "x": 947, "desc": ""},
+  {"type": "kilof", "y": 451, "x": 400, "desc": "Pierwszy hangar na prawo. (jak na mapie)"}
 ]
