@@ -148,9 +148,9 @@
             text-align: center;
         }
 
-        /* Lista robocza dodanych lokacji w panelu admina */
+        /* Lista robocza dodanych lokacji w panelu admina (z ciemnym paskiem przewijania) */
         #temp-list {
-            max-height: 110px;
+            max-height: 120px;
             overflow-y: auto;
             background: #141720;
             border: 1px solid #2a2e3d;
@@ -159,13 +159,29 @@
             font-size: 11px;
             margin-bottom: 8px;
             color: #cbd5e1;
+            scrollbar-width: thin;
+            scrollbar-color: #2a2e3d #141720;
+        }
+        #temp-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        #temp-list::-webkit-scrollbar-track {
+            background: #141720;
+            border-radius: 6px;
+        }
+        #temp-list::-webkit-scrollbar-thumb {
+            background-color: #2a2e3d;
+            border-radius: 6px;
         }
         .temp-item {
-            padding: 3px 0;
+            padding: 4px 0;
             border-bottom: 1px dashed #2a2e3d;
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+        .temp-item:last-child {
+            border-bottom: none;
         }
 
         /* --- USUNIĘCIE BIAŁYCH RAMKI I STRZAŁKI W LEAFLET --- */
@@ -419,7 +435,6 @@
     };
 
     // Ikona wektorowa (Google Pin 1:1 z dyniami)
-    // Kolory: #ff5252 (czerwony - niezebrane/domyślny), #00b894 (zielony - zebrane), #1e222d lub ciemny szary (ciemnoszary - nie mam)
     function stwórzIkonęPinezki(stan) {
         let kolor = '#ff5252'; // Domyślnie czerwony (niezebrane)
 
