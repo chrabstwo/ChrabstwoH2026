@@ -21,5 +21,6 @@
   {"type": "pracownik", "y": 1331, "x": 1211, "desc": "Pracownik kanionu, do którego należy podejść i porozmawiać po przyjechaniu z domu rodzinnego."},
   {"type": "pracownik", "y": 1318, "x": 1145, "desc": "Pracownik kanionu, do którego należy podejść i porozmawiać po przyjechaniu z domu rodzinnego."},
   {"type": "noz", "y": 1278, "x": 1264, "desc": "Nóż leży na skraju przepaści kanionu. Aby się do niego dostać należy od strony autostrady przeskoczyć płot. Nóż należy znaleźć po rozmowie z dwoma pracownikami kanionu i gdy jest tutaj obszar zaznaczony na mapie."},
-  {"type": "kasyno", "y": 1369, "x": 1709, "desc": ""}
+  {"type": "kasyno", "y": 1369, "x": 1709, "desc": ""},
+  {"type": "magazyn", "y": 251, "x": 1757, "desc": "Wyścig z czasem: najlepiej jechać przez całe LS do Flint County, odbić w stronę BB i wjechać na autostradę w kierunku BM. Podpalenie: Wejść do środka magazynu od tyłu i podpalić. (Blip przy kartonach)"}
 ]
