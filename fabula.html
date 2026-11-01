@@ -382,6 +382,11 @@
                     nazwa: '🎰 Kasyno',
                     svg: `<div style="background:rgba(20,23,32,0.9); border-radius:50%; width:38px; height:38px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(0,0,0,0.7); border:2px solid #ec4899;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M11.887 21.98c.076.026.15.027.226 0C13.084 21.65 20 19.018 20 11.253V4.304a.4.4 0 0 0-.303-.389l-7.6-1.903a.4.4 0 0 0-.194 0l-7.6 1.903A.4.4 0 0 0 4 4.304v6.948c0 7.687 6.918 10.387 7.887 10.728Zm2.335-10.045 2.652-2.147c.063-.126.126-.252.126-.379-.063-.126-.19-.252-.316-.252h-3.283l-1.073-2.904c-.063-.127-.19-.253-.316-.253s-.252.126-.315.253l-1.01 2.904H7.34c-.126 0-.252.126-.315.252a.304.304 0 0 0 .126.38L9.74 11.87l-.821 3.157a.304.304 0 0 0 .126.379.402.402 0 0 0 .379 0l2.652-1.894 2.588 1.894c.063.063.126.063.19.063.063 0 .126 0 .189-.063a.304.304 0 0 0 .126-.379l-.947-3.093Z" fill="#ec4899"/></svg></div>`
                 };
+            case 'magazyn': 
+                return { 
+                    nazwa: '📦 Magazyn',
+                    svg: `<div style="background:rgba(20,23,32,0.9); border-radius:50%; width:38px; height:38px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(0,0,0,0.7); border:2px solid #10b981;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12.54,10.67l-.54.27-.54-.27-8-4s0,0,0,0h0l8-4.5a1,1,0,0,1,1,0l8,4.5h0s0,0,0,0l-4,2a.24.24,0,0,0-.09-.06l-4-2a1,1,0,0,0-.9,1.78l2.77,1.39ZM3,7.56a.06.06,0,0,1,0,0v9a1,1,0,0,0,.51.87l8,4.49v-10l-.5-.25Zm18,0-4,2V14a1,1,0,0,1-2,0V10.56l-2.5,1.25v10l8-4.49A1,1,0,0,0,21,16.5v-9A.06.06,0,0,1,21,7.56Z" fill="#10b981"/></svg></div>`
+                };
             default: 
                 return { 
                     nazwa: '📍 Punkt Fabularny',
@@ -495,6 +500,7 @@
                     <option value="pracownik">Pracownik</option>
                     <option value="noz">Nóż</option>
                     <option value="kasyno">Kasyno</option>
+                    <option value="magazyn">Magazyn</option>
                 </select>
 
                 <label style="font-size: 11px; color: #cbd5e1;">Krótki opis:</label>
