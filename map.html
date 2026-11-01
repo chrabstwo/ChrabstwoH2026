@@ -422,12 +422,12 @@
         document.getElementById("total-count").innerText = wszystkieDynieDane.length;
     }
 
-    window.przelaczStanDyni = function(idDyni) {
-        const index = zebraneDynie.indexOf(idDyni);
+    window.przelaczStanDyni = function(identyfikatorDyni) {
+        const index = zebraneDynie.indexOf(identyfikatorDyni);
         if (index > -1) {
             zebraneDynie.splice(index, 1);
         } else {
-            zebraneDynie.push(idDyni);
+            zebraneDynie.push(identyfikatorDyni);
         }
         localStorage.setItem("chrabstwo_zebrane_dynie", JSON.stringify(zebraneDynie));
         aktualizujLicznik();
@@ -440,8 +440,9 @@
         warstwyMarkerow = [];
 
         wszystkieDynieDane.forEach((dynia) => {
-            const idDyni = `${dynia.y}_${dynia.x}`;
-            const jestZebrana = zebraneDynie.includes(idDyni);
+            // Używamy unikalnego ID dyni z JSON jako identyfikatora w pamięci
+            const identyfikatorDyni = String(dynia.id);
+            const jestZebrana = zebraneDynie.includes(identyfikatorDyni);
 
             if (ukryjZebrane && jestZebrana) return;
 
@@ -458,7 +459,7 @@
                     <b style="font-size: 13px; color: #f8fafc;">${numerDyni}</b><br>
                     <div style="font-size: 11px; color: #94a3b8; margin: 2px 0 6px 0;">Współrzędne: Y: <b>${dynia.y}</b>, X: <b>${dynia.x}</b></div>
                     <img src="${dynia.img}" class="popup-img" alt="Screen dyni" onclick="pokazZdjecie('${dynia.img}')" onerror="this.style.display='none'" title="Kliknij, aby powiększyć">
-                    <button class="${przyciskKlasa}" onclick="przelaczStanDyni('${idDyni}')">${przyciskTekst}</button>
+                    <button class="${przyciskKlasa}" onclick="przelaczStanDyni('${identyfikatorDyni}')">${przyciskTekst}</button>
                 </div>
             `;
 
@@ -472,6 +473,20 @@
         .then(response => response.json())
         .then(dynie => {
             wszystkieDynieDane = dynie;
+
+            // --- AUTOMATYCZNA NAPRAWA STARYCH WPISÓW W PAMIĘCI ---
+            // Konwertuje stare klucze oparte na współrzędnych (np. "475_1233") na numery ID z JSON
+            zebraneDynie = zebraneDynie.map(item => {
+                if (typeof item === 'string' && item.includes('_')) {
+                    const [yStr, xStr] = item.split('_');
+                    const znaleziona = dynie.find(d => Math.round(d.y) === parseInt(yStr) && Math.round(d.x) === parseInt(xStr));
+                    return znaleziona ? String(znaleziona.id) : null;
+                }
+                return String(item);
+            }).filter((item, index, self) => item !== null && self.indexOf(item) === index); // usuwa duplikaty i puste
+            localStorage.setItem("chrabstwo_zebrane_dynie", JSON.stringify(zebraneDynie));
+            // -----------------------------------------------------
+
             aktualizujLicznik();
             odswiezMarkeryNaMapie();
         })
