@@ -1,4 +1,6 @@
 [
+  {"type": "dom_rodzinny", "y": 701, "x": 1861, "desc": "Rozpoczęcie eventu fabularnego"},
+  {"type": "chatka_chilliad", "y": 505, "x": 63, "desc": ""},
   {"type": "willard", "y": 1328, "x": 1751, "desc": ""},
   {"type": "willard", "y": 1442, "x": 1935, "desc": ""},
   {"type": "willard", "y": 1887, "x": 1772, "desc": ""},
