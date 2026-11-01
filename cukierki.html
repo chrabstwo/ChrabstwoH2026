@@ -127,9 +127,8 @@
             font-size: 12px;
             outline: none;
             font-family: sans-serif;
-            resize: vertical;
         }
-        .admin-box input:focus, .admin-box textarea:focus {
+        .admin-box input:focus {
             border-color: #00b894;
         }
         .admin-box button, .user-action-btn {
@@ -195,37 +194,89 @@
             border: 1px solid #2a2e3d;
             box-shadow: 0 8px 24px rgba(0,0,0,0.7);
         }
-        .popup-btns {
-            display: flex;
-            gap: 6px;
-            margin-top: 10px;
-        }
-        .popup-btn {
-            flex: 1;
-            padding: 7px;
-            border: none;
+        .popup-img {
+            max-width: 100%;
             border-radius: 6px;
-            font-weight: bold;
-            font-size: 11px;
+            margin: 8px 0;
+            display: block;
+            border: 1px solid #2a2e3d;
             cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .popup-img:hover {
+            opacity: 0.8;
+        }
+        .collected-btn {
+            width: 100%;
+            padding: 8px;
+            background: #00b894;
+            border: none;
             color: white;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 6px;
             text-align: center;
         }
-        .btn-mam { background: #00b894; }
-        .btn-mam:hover { background: #019875; }
-        .btn-brak { background: #ef4444; }
-        .btn-brak:hover { background: #dc2626; }
-        .btn-reset { background: #334155; }
-        .btn-reset:hover { background: #475569; }
+        .collected-btn:hover { background: #019875; }
+        .collected-btn.uncollect {
+            background: #ef4444;
+        }
+        .collected-btn.uncollect:hover { background: #dc2626; }
+        
+        .not-collected-btn {
+            width: 100%;
+            padding: 8px;
+            background: #334155;
+            border: none;
+            color: white;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 4px;
+            text-align: center;
+        }
+        .not-collected-btn:hover { background: #475569; }
+        .not-collected-btn.active {
+            background: #dc2626;
+        }
+
+        /* --- MODAL DO POWIĘKSZANIA ZDJĘĆ --- */
+        #image-modal {
+            display: none;
+            position: fixed;
+            z-index: 99999;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            justify-content: center; align-items: center;
+            cursor: pointer;
+        }
+        #image-modal img {
+            max-width: 90%; max-height: 90%; border-radius: 8px; border: 2px solid #2a2e3d;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+        .copy-info {
+            color: #00b894;
+            font-size: 11px;
+            text-align: center;
+            margin-top: 6px;
+            display: none;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
 
 <!-- Licznik na górze po środku -->
 <div id="counter-box">
-    🍬 Odwiedzeni NPC: <span id="cnt-total">0</span> 
-    (<span style="color:#00b894;">Mam: <span id="cnt-mam">0</span></span> | 
-     <span style="color:#ef4444;">Brak: <span id="cnt-brak">0</span></span>)
+    🍬 Odwiedzeni NPC: <span id="cnt-total">0</span>
+</div>
+
+<!-- Modal do powiększania zdjęć -->
+<div id="image-modal" onclick="zamknijZdjecie()">
+    <img id="modal-img" src="" alt="Powiększony screen">
 </div>
 
 <!-- Mini menu w lewym dolnym rogu -->
@@ -263,7 +314,7 @@
 
     <!-- Regulamin / Nota informacyjna -->
     <div class="menu-section" style="font-size: 10px; color: #64748b; line-height: 1.3; text-align: justify; border-bottom: none; margin-bottom: 0; padding-bottom: 0;">
-        <b>Nota informacyjna:</b> Narzędzie wyłącznie do użytku wewnętrznego organizacji Chrabstwo. Mapa ma charakter pomocniczy, zakaz handlu i dystrybucji komercyjnej. Autor projektu nie ponosi żadnej odpowiedzialności za dalsze udostępnianie mapy osobom trzecim. Zgodnie z wytycznymi serwera.
+        <b>Nota informacyjna:</b> Narzędzie wyłącznie do użytku wewnętrznego organizacji Chrabstwo. Zakaz handlu i dystrybucji komercyjnej.
     </div>
 </div>
 
@@ -334,13 +385,25 @@
 
     let stanyCukierkow = JSON.parse(localStorage.getItem('chrabstwo_stany_cukierkow') || '{}');
 
-    // Ikona wektorowa Cukierka (Szary domyślny, Zielony 'mam', Czerwony 'brak')
+    // Funkcje powiększania zdjęcia w pop-upie
+    window.pokazZdjecie = function(url) {
+        const modal = document.getElementById("image-modal");
+        const modalImg = document.getElementById("modal-img");
+        modalImg.src = url;
+        modal.style.display = "flex";
+    };
+
+    window.zamknijZdjecie = function() {
+        document.getElementById("image-modal").style.display = "none";
+    };
+
+    // Ikona wektorowa Cukierka zależna od stanu (Mam, Brak, Domyślny)
     function stwórzIkonęCukierka(stan) {
         let kolor = '#94a3b8'; // Domyślny - szary
         let emotka = '🍬';
 
         if (stan === 'mam') {
-            kolor = '#00b894'; // Zielony z motywu map.html
+            kolor = '#00b894'; // Zielony
         } else if (stan === 'brak') {
             kolor = '#ef4444'; // Czerwony
             emotka = '❌';
@@ -360,17 +423,12 @@
     }
 
     function aktualizujLicznik() {
-        let mamCount = 0;
-        let brakCount = 0;
-
+        // Liczy wszystkie punkty, które mają zaznaczony status (mam lub brak)
+        let odwiedzeniCount = 0;
         Object.values(stanyCukierkow).forEach(v => {
-            if (v === 'mam') mamCount++;
-            if (v === 'brak') brakCount++;
+            if (v === 'mam' || v === 'brak') odwiedzeniCount++;
         });
-
-        document.getElementById('cnt-mam').innerText = mamCount;
-        document.getElementById('cnt-brak').innerText = brakCount;
-        document.getElementById('cnt-total').innerText = mamCount + brakCount;
+        document.getElementById('cnt-total').innerText = odwiedzeniCount;
     }
 
     function odswiezMarkeryNaMapie() {
@@ -378,20 +436,27 @@
         warstwyMarkerow = [];
 
         wszystkieCukierki.forEach((item) => {
-            const stan = stanyCukierkow[item.id] || 'nieznany';
+            const identyfikator = String(item.id);
+            const stan = stanyCukierkow[identyfikator] || 'nieznany';
             const marker = L.marker([item.y, item.x], { icon: stwórzIkonęCukierka(stan) });
+
+            const jestZebrana = (stan === 'mam');
+            const jestBrak = (stan === 'brak');
+
+            const przyciskZebraneTekst = jestZebrana ? "Oznacz jako niezebrane" : "✓ Zebrane";
+            const przyciskZebraneKlasa = jestZebrana ? "collected-btn uncollect" : "collected-btn";
+
+            const przyciskBrakTekst = jestBrak ? "Oznacz jako niezebrane" : "❌ Nie mam";
+            const przyciskBrakKlasa = jestBrak ? "not-collected-btn active" : "not-collected-btn";
 
             const popupContent = `
                 <div class="popup-box">
                     <b style="font-size: 13px; color: #f8fafc;">🍬 Cukierki NPC #${item.id}</b><br>
                     <div style="font-size: 11px; color: #94a3b8; margin: 2px 0 6px 0;">Y: <b>${item.y}</b>, X: <b>${item.x}</b></div>
-                    <div style="font-size: 12px; color: #cbd5e1; margin: 8px 0; line-height: 1.4;">${item.desc || 'Brak opisu lokacji.'}</div>
+                    <img src="${item.img}" class="popup-img" alt="Screen lokalizacji" onclick="pokazZdjecie('${item.img}')" onerror="this.style.display='none'" title="Kliknij, aby powiększyć">
                     
-                    <div class="popup-btns">
-                        <button class="popup-btn btn-mam" onclick="zmienStanCukierka(${item.id}, 'mam')">🍬 MAM</button>
-                        <button class="popup-btn btn-brak" onclick="zmienStanCukierka(${item.id}, 'brak')">❌ BRAK</button>
-                        <button class="popup-btn btn-reset" onclick="zmienStanCukierka(${item.id}, 'reset')">🔄</button>
-                    </div>
+                    <button class="${przyciskZebraneKlasa}" onclick="przelaczStanCukierka('${identyfikator}', 'mam')">${przyciskZebraneTekst}</button>
+                    <button class="${przyciskBrakKlasa}" onclick="przelaczStanCukierka('${identyfikator}', 'brak')">${przyciskBrakTekst}</button>
                 </div>
             `;
 
@@ -403,18 +468,18 @@
         aktualizujLicznik();
     }
 
-    window.zmienStanCukierka = function(id, stan) {
-        if (stan === 'reset') {
-            delete stanyCukierkow[id];
+    window.przelaczStanCukierka = function(id, nowyStan) {
+        if (stanyCukierkow[id] === nowyStan) {
+            delete stanyCukierkow[id]; // Odznacz jeśli kliknięto ponownie ten sam przycisk
         } else {
-            stanyCukierkow[id] = stan;
+            stanyCukierkow[id] = nowyStan;
         }
         localStorage.setItem('chrabstwo_stany_cukierkow', JSON.stringify(stanyCukierkow));
         map.closePopup();
         odswiezMarkeryNaMapie();
     };
 
-    // Wczytanie bazy cukierków
+    // Wczytanie bazy cukierków z pliku JSON
     fetch('cukierki.json')
         .then(res => res.json())
         .then(dane => {
@@ -423,13 +488,15 @@
         })
         .catch(err => console.log('Błąd wczytywania cukierki.json:', err));
 
-    // --- SZYBKIE DODAWANIE DO KOSZYKA (ADMIN) ---
+    // --- SZYBKIE DODAWANIE DO KOSZYKA (ADMIN - 1:1 jak dynie) ---
     window.dodajDoKoszyka = function(y, x) {
-        const descInput = document.getElementById('candy-desc');
-        const descVal = descInput ? descInput.value.trim() : "";
-        const nextId = wszystkieCukierki.length + koszykPunktów.length + 1;
+        const idInput = document.getElementById('item-id');
+        const urlInput = document.getElementById('img-url');
+        
+        const idVal = idInput ? parseInt(idInput.value.trim()) : (wszystkieCukierki.length + koszykPunktów.length + 1);
+        const imgUrl = urlInput ? urlInput.value.trim() : "";
 
-        const nowyObiekt = { id: nextId, y: y, x: x, desc: descVal };
+        const nowyObiekt = { id: idVal, y: y, x: x, img: imgUrl };
         koszykPunktów.push(nowyObiekt);
 
         const tmpMarker = L.marker([y, x], { icon: stwórzIkonęCukierka('nieznany') }).addTo(map);
@@ -498,8 +565,13 @@
         const popupContent = `
             <div class="popup-box">
                 <div style="font-size: 11px; color: #94a3b8; margin-bottom: 4px;">Współrzędne: Y: <b>${y}</b>, X: <b>${x}</b></div>
-                <label style="font-size: 11px; color: #cbd5e1;">Opis lokacji z SS:</label>
-                <textarea id="candy-desc" rows="2" placeholder="np. Dom przy basenie..."></textarea>
+                
+                <label style="font-size: 11px; color: #cbd5e1;">Numer NPC:</label>
+                <input type="number" id="item-id" value="${wszystkieCukierki.length + koszykPunktów.length + 1}">
+
+                <label style="font-size: 11px; color: #cbd5e1;">URL do obrazka (Imgur):</label>
+                <input type="text" id="img-url" placeholder="https://i.imgur.com/...">
+                
                 <button onclick="dodajDoKoszyka(${y}, ${x})" style="margin-top: 4px;">➕ DODAJ DO KOSZYKA</button>
             </div>
         `;
