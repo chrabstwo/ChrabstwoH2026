@@ -268,5 +268,293 @@
     "y": 1829,
     "x": 174,
     "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565370747352912013/image.png?ex=6ae89d1d&is=6ae74b9d&hm=c7fcff7563c5bd3f33b28c7eb5213c4970464d064ed84503cb810ff15d79ee1b&"
+  },
+  {
+    "id": 46,
+    "y": 1991,
+    "x": 1754,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565370948302012497/mta-screen_2026-10-29_15-10-51.png?ex=6ae89d4d&is=6ae74bcd&hm=abc1364dcc46b514beb2bd34e9a3a2745af4bc667a30d69679b0468baed4e313&"
+  },
+  {
+    "id": 47,
+    "y": 1365,
+    "x": 1555,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565370949656780820/mta-screen_2026-10-29_14-39-41.png?ex=6ae89d4d&is=6ae74bcd&hm=14578428ac803f03d009c58290191660857fffc673cd797a0e9add901c437650&"
+  },
+  {
+    "id": 48,
+    "y": 1403,
+    "x": 1659,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565370950428659722/mta-screen_2026-10-29_14-40-12.png?ex=6ae89d4d&is=6ae74bcd&hm=7c74e220202d0ecc6a0e32056033695fc40c5eb6f4d31672b176061e1d224d30&"
+  },
+  {
+    "id": 49,
+    "y": 1365,
+    "x": 1868,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565370951112196155/mta-screen_2026-10-29_14-48-39.png?ex=6ae89d4d&is=6ae74bcd&hm=27e2c441bef484e39e2efec4cf481da6d58e03a44290b340debf5f59bedf2984&"
+  },
+  {
+    "id": 50,
+    "y": 1600,
+    "x": 1830,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565370951791681646/mta-screen_2026-10-29_14-54-50.png?ex=6ae89d4e&is=6ae74bce&hm=100a0beb6c37ffd4a78ace8ac1da2d29da9f04ad9fba87bba2c35d5eea0161bc&"
+  },
+  {
+    "id": 51,
+    "y": 1588,
+    "x": 1884,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565370952588468244/mta-screen_2026-10-29_14-55-23.png?ex=6ae89d4e&is=6ae74bce&hm=7a7e3639b96af9b121666668b58c7c00c32dedd6113b02ec98827373a9479199&"
+  },
+  {
+    "id": 52,
+    "y": 1595,
+    "x": 1925,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565370953310011413/mta-screen_2026-10-29_14-56-25.png?ex=6ae89d4e&is=6ae74bce&hm=49049ac6df7d5a2b09a9a1b29aad05281cc30ce32fec4609cb05794837fadb56&"
+  },
+  {
+    "id": 53,
+    "y": 1794,
+    "x": 1890,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565370954044145684/mta-screen_2026-10-29_15-04-13.png?ex=6ae89d4e&is=6ae74bce&hm=c622aba99e818809fae80c192ee4c24374f15704af7c8e4b2ae43b123c72fc8c&"
+  },
+  {
+    "id": 54,
+    "y": 1976,
+    "x": 1784,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565370954828222494/mta-screen_2026-10-29_15-10-10.png?ex=6ae89d4e&is=6ae74bce&hm=97001132b094a01d482d89c718affd3f73ba8d7b425015ce1f377a0c53f40469&"
+  },
+  {
+    "id": 55,
+    "y": 1976,
+    "x": 1773,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565370955491184821/mta-screen_2026-10-29_15-10-33.png?ex=6ae89d4e&is=6ae74bce&hm=39b70ea7deacc51c04b3793beb8ee847886c37fbf198f590aa30791c7c325b39&"
+  },
+  {
+    "id": 56,
+    "y": 1707,
+    "x": 1504,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565370966421540955/mta-screen_2026-10-29_15-23-42.png?ex=6ae89d51&is=6ae74bd1&hm=907389d45ca22892c357ecd90418d3a321a99ac4511d96c902c60000ad0ff33c&"
+  },
+  {
+    "id": 57,
+    "y": 1909,
+    "x": 1649,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565370966987776141/mta-screen_2026-10-29_15-14-22.png?ex=6ae89d51&is=6ae74bd1&hm=5d8eb636d0f85d76b7e3b82bf765564acb5315fd8d52a214e7ab95cdbd5e09ca&"
+  },
+  {
+    "id": 58,
+    "y": 1915,
+    "x": 530,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565371101826121888/image.png?ex=6ae89d71&is=6ae74bf1&hm=336817cf7615317d6247cf0551b2a353d5696f8fee12c1fd63e8be786df9165a&"
+  },
+  {
+    "id": 59,
+    "y": 1355,
+    "x": 280,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565371497067847811/MTA__San_Andreas_29.10.2026_15_22_36.png?ex=6ae89dd0&is=6ae74c50&hm=3040b476c0fe015159f550f1757f4b0819d97f623de8db4a27470825a70713f2&"
+  },
+  {
+    "id": 60,
+    "y": 1451,
+    "x": 361,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565371497587937371/MTA__San_Andreas_29.10.2026_15_19_52.png?ex=6ae89dd0&is=6ae74c50&hm=2b083f4a92b2db1b1ae85aabf1d31f83d0b84c925953ba4770cc07c1c93db703&"
+  },
+  {
+    "id": 61,
+    "y": 1430,
+    "x": 352,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565371498011693096/MTA__San_Andreas_29.10.2026_15_15_08.png?ex=6ae89dd0&is=6ae74c50&hm=0871ebf08100d43dc8c84c1e8d19603e3350ea14cc91bf1f323329c9a0c947f0&"
+  },
+  {
+    "id": 62,
+    "y": 1340,
+    "x": 205,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565371500511494184/MTA__San_Andreas_29.10.2026_15_08_29.png?ex=6ae89dd0&is=6ae74c50&hm=a65ed9cd07e45827d53ba213f136fc1e9214d6e9ab21bb7e8319e65bd144ec33&"
+  },
+  {
+    "id": 63,
+    "y": 1031,
+    "x": 69,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565371501027270828/MTA__San_Andreas_29.10.2026_15_04_12.png?ex=6ae89dd1&is=6ae74c51&hm=9b71b89a2670c2e77d6d6bd68520d561527874bd4e5fbbb0c05a7e2db1a1a843&"
+  },
+  {
+    "id": 64,
+    "y": 1107,
+    "x": 126,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565371501392171300/MTA__San_Andreas_29.10.2026_15_02_43.png?ex=6ae89dd1&is=6ae74c51&hm=b8aa2a336cb74490173dec435b1cf15326d9338747377a266a9162802c31813a&"
+  },
+  {
+    "id": 65,
+    "y": 1297,
+    "x": 328,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565371505766830161/MTA__San_Andreas_29.10.2026_15_23_42.png?ex=6ae89dd2&is=6ae74c52&hm=20249fd8904d393e1c6c14f7bc58ccf9532775d07b845b51a2bc7e0d25f2664d&"
+  },
+  {
+    "id": 66,
+    "y": 1963,
+    "x": 736,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565371550696345660/image.png?ex=6ae89ddc&is=6ae74c5c&hm=d49ef86c2b38f5bc68fa5aaeceb0ef654d4c736cfaa4b2c5526d0d29284437e4&"
+  },
+  {
+    "id": 67,
+    "y": 1943,
+    "x": 929,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565371552072073307/image.png?ex=6ae89ddd&is=6ae74c5d&hm=9c48d31fdc327c40c10ab930df9fe25323f2eac512b63191637d636fb3e61f88&"
+  },
+  {
+    "id": 68,
+    "y": 1562,
+    "x": 745,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565372248179609710/image.png?ex=6ae89e83&is=6ae74d03&hm=0d0936591ef8f817b21796c5dc34d2e7e7872f73f98e1c529a0a0878320e95f7&"
+  },
+  {
+    "id": 69,
+    "y": 1387,
+    "x": 953,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565373114802503780/image.png?ex=6ae89f51&is=6ae74dd1&hm=d7ba8f8509a1a898430dbd35e81b0141acd0a7c83c09d8a153f3e8fef76576ff&"
+  },
+  {
+    "id": 70,
+    "y": 1441,
+    "x": 1028,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565373115528380556/image.png?ex=6ae89f51&is=6ae74dd1&hm=60e2c62f1fc01440b47e331596ce6cde11874a3af1112ef9d0bb2acd73fca8f3&"
+  },
+  {
+    "id": 71,
+    "y": 1017,
+    "x": 1081,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565374825294336020/image.png?ex=6ae8a0e9&is=6ae74f69&hm=4acf2bbe65220678ab3e554d77b0ea26c6616b49776149c7467ba52e4b1213cd&"
+  },
+  {
+    "id": 72,
+    "y": 955,
+    "x": 1128,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565374825977872414/image.png?ex=6ae8a0e9&is=6ae74f69&hm=45d2947600c32d3213b350a3e88b9daaa419fe241e2090b3d07647dc1c906bb3&"
+  },
+  {
+    "id": 73,
+    "y": 998,
+    "x": 1151,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565374826783182898/image.png?ex=6ae8a0e9&is=6ae74f69&hm=c24cfd7fc740b8b5a6be009f3960cf7a2e8346c5af463627c93beafacb8366f8&"
+  },
+  {
+    "id": 74,
+    "y": 1242,
+    "x": 308,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565375734812508301/MTA__San_Andreas_29.10.2026_15_28_49.png?ex=6ae8a1c2&is=6ae75042&hm=0eca0aa2baacd390a5a538ffff7ec71c1bdf96630a8b043cd4b0b030b7fc6c61&"
+  },
+  {
+    "id": 75,
+    "y": 1064,
+    "x": 352,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565375735244398622/MTA__San_Andreas_29.10.2026_15_43_56.png?ex=6ae8a1c2&is=6ae75042&hm=a9248ded91a471dfd01f9606e80ba5188c1edadb3f12476a38e5a6e650eb03c1&"
+  },
+  {
+    "id": 76,
+    "y": 1323,
+    "x": 245,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565375736250896544/MTA__San_Andreas_29.10.2026_15_30_07.png?ex=6ae8a1c2&is=6ae75042&hm=898d62e708b3137f3ff0d22d180ee35fa43da525f44dc23ce8f14d65b371e512&"
+  },
+  {
+    "id": 77,
+    "y": 815,
+    "x": 1303,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565375931105935502/image.png?ex=6ae8a1f1&is=6ae75071&hm=b076d90c63bcab78a83172d47b22c04259df1960c3025ee592f3c174d35e6806&"
+  },
+  {
+    "id": 78,
+    "y": 1092,
+    "x": 1477,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565376123611652277/mta-screen_2026-10-29_15-38-37.png?ex=6ae8a21f&is=6ae7509f&hm=680c423c33c983c9e73ca2bc8960f044247585947d32462e89dd42f542a00521&"
+  },
+  {
+    "id": 79,
+    "y": 1147,
+    "x": 1444,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565376807501307964/image.png?ex=6ae8a2c2&is=6ae75142&hm=3a0cda03d9761586d3b84cd359e6bb887c508912d1a6ac07bd1a37bcfa597572&"
+  },
+  {
+    "id": 80,
+    "y": 1140,
+    "x": 1474,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565376808025723072/image.png?ex=6ae8a2c2&is=6ae75142&hm=d46d05ef93d1462378419896f308b4cc7c7a2a43f6c63c79b683395d785e9fd2&"
+  },
+  {
+    "id": 81,
+    "y": 1047,
+    "x": 1820,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565377745314258944/image.png?ex=6ae8a3a1&is=6ae75221&hm=ad5a8691372cbb6e9d78276f97f417f5eee156eb6c91e39f695e7c91c47a793d&"
+  },
+  {
+    "id": 82,
+    "y": 1034,
+    "x": 1820,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565377745859510353/image.png?ex=6ae8a3a1&is=6ae75221&hm=7da62ad36d540fdd9d9ae9563992cc8003722ca4508369e1a3b0062179d63107&"
+  },
+  {
+    "id": 83,
+    "y": 1969,
+    "x": 762,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565380668576501962/MTA__San_Andreas_29.10.2026_15_55_04.png?ex=6ae8a65a&is=6ae754da&hm=f201902a8aeea958e0b6edbb1b9a36edc1a00f5598725cbd9d6b71112d1e649d&"
+  },
+  {
+    "id": 84,
+    "y": 1805,
+    "x": 174,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565380669033418852/MTA__San_Andreas_29.10.2026_15_49_04.png?ex=6ae8a65a&is=6ae754da&hm=5962aa2cda9cff90f9b201eaf69c0debb4817bf5c9d8766a99855e76a7573dc4&"
+  },
+  {
+    "id": 85,
+    "y": 1102,
+    "x": 1474,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565385339869200405/image.png?ex=6ae8aab4&is=6ae75934&hm=ca350b0bd5a64995b2a54fddc46cbfb323dc1ef9d0a2be23d8c49cf76c975014&"
+  },
+  {
+    "id": 86,
+    "y": 1186,
+    "x": 1493,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565385340301086771/image.png?ex=6ae8aab4&is=6ae75934&hm=0963f0ee7ffb750aa23def4cd0f13d381b475b79d9368ed6bcda38453445838c&"
+  },
+  {
+    "id": 87,
+    "y": 1421,
+    "x": 1033,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565385738839785523/mta-screen_2026-10-29_15-33-02.png?ex=6ae8ab13&is=6ae75993&hm=3d0feca173a6ad37e5db3ef4efa170393e0138f2df69a83960b4773a7c073e7d&"
+  },
+  {
+    "id": 88,
+    "y": 1442,
+    "x": 994,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565385739372597298/mta-screen_2026-10-29_15-33-38.png?ex=6ae8ab13&is=6ae75993&hm=1779d22e93a03f966c7db0f5a3f93647333ecf8b98349e2777b4d8de90db61ed&"
+  },
+  {
+    "id": 89,
+    "y": 1422,
+    "x": 961,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565385741389922385/mta-screen_2026-10-29_15-35-20.png?ex=6ae8ab14&is=6ae75994&hm=6b03d534f2b71acdb6d173af5b89f56b96d8d84002d69c0f7bca15f451cbf362&"
+  },
+  {
+    "id": 90,
+    "y": 1376,
+    "x": 962,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565385741847105656/mta-screen_2026-10-29_15-36-22.png?ex=6ae8ab14&is=6ae75994&hm=bef158758a11bbd10fbbbccedd115c4207e0d40651d8769ad68b9abeb2e0a7c6&"
+  },
+  {
+    "id": 91,
+    "y": 1910,
+    "x": 518,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565385745395490896/mta-screen_2026-10-29_15-49-00.png?ex=6ae8ab15&is=6ae75995&hm=35b6b52ca3d272e2186fb47272c5afff350240bd84c2a8d837a9d0f67dc2d938&"
+  },
+  {
+    "id": 92,
+    "y": 1918,
+    "x": 521,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565385745991204895/mta-screen_2026-10-29_15-49-13.png?ex=6ae8ab15&is=6ae75995&hm=8315755e040e9f120b89a20af08c92e75e25e2f81c364278f54be326f5db3957&"
+  },
+  {
+    "id": 93,
+    "y": 1047,
+    "x": 1797,
+    "img": "https://cdn.discordapp.com/attachments/1564019003339309157/1565386529298321621/image.png?ex=6ae8abd0&is=6ae75a50&hm=0dcbd53643908b3f4c27ec343439fde5de54a10f0c3f3499e1f7052a06d6b54b&"
   }
 ]
