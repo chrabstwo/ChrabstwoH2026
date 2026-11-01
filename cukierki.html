@@ -140,7 +140,6 @@
             border-radius: 6px;
             cursor: pointer;
             font-size: 13px;
-            margin-bottom: 6px;
         }
         .admin-box button:hover, .user-action-btn:hover { background: #019875; }
         .admin-status {
@@ -316,6 +315,16 @@
 <div id="sidebar">
     <h2>Chrabstwo 4Life</h2>
     
+    <!-- Postęp znajdziek (1:1 z map.html) -->
+    <div class="menu-section">
+        <h4>Postęp znajdziek</h4>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; margin-bottom: 10px; color: #cbd5e1;">
+            <input type="checkbox" id="hide-collected-chk" style="accent-color: #00b894; width: 16px; height: 16px; cursor: pointer;">
+            <span>Ukryj zebrane znajdźki</span>
+        </label>
+        <button id="reset-progress-btn" class="user-action-btn" style="background: #334155; font-size: 12px;">Zresetuj zebrane znajdźki</button>
+    </div>
+
     <!-- Wybór eventów -->
     <div class="menu-section">
         <h4>Wybierz event</h4>
@@ -324,13 +333,6 @@
         <div style="font-size: 13px; color: #00b894; padding: 6px 0; background: #141720; text-align: center; border-radius: 6px; border: 1px solid #00b894; font-weight: bold; margin-top: 8px;">
             🍬 Cukierki (NPC) 2026
         </div>
-    </div>
-
-    <!-- Przyciski użytkownika (Ukryj zebrane) -->
-    <div class="menu-section">
-        <h4>Opcje mapy</h4>
-        <button id="toggle-hide-collected" class="user-action-btn" style="background: #334155; margin-bottom: 6px;">👁️ Ukryj zebrane</button>
-        <button id="reset-progress-btn" class="user-action-btn" style="background: #ef4444; margin-bottom: 0;">🔄 Zresetuj lokacje</button>
     </div>
 
     <!-- Panel Administratora ze Szybką Listą -->
@@ -348,7 +350,7 @@
             <div id="temp-list"><i>Brak nowych punktów</i></div>
             
             <button id="export-json-btn" style="background: #10b981; margin-bottom: 6px;">📋 EKSPORTUJ CAŁY JSON</button>
-            <button id="admin-logout-btn" style="background: #ef4444; margin-bottom: 0;">Zablokuj panel</button>
+            <button id="admin-logout-btn" style="background: #ef4444;">Zablokuj panel</button>
         </div>
     </div>
 
@@ -366,30 +368,12 @@
     let czyAdmin = sessionStorage.getItem("admin_zalogowany") === "true";
     let ukryjZebrane = localStorage.getItem("chrabstwo_ukryj_zebrane") === "true";
 
-    const adminLoginView = document.getElementById("admin-login-view");
-    const adminLoggedView = document.getElementById("admin-logged-view");
-    const adminPassInput = document.getElementById("admin-pass");
-    const adminLoginBtn = document.getElementById("admin-login-btn");
-    const adminLogoutBtn = document.getElementById("admin-logout-btn");
-    const adminErr = document.getElementById("admin-err");
-    const tempListEl = document.getElementById("temp-list");
-    const toggleHideBtn = document.getElementById("toggle-hide-collected");
+    const hideCollectedChk = document.getElementById("hide-collected-chk");
+    hideCollectedChk.checked = ukryjZebrane;
 
-    function aktualizujPrzyciskUkrywania() {
-        if (ukryjZebrane) {
-            toggleHideBtn.innerText = "👁️ Pokaż zebrane";
-            toggleHideBtn.style.background = "#00b894";
-        } else {
-            toggleHideBtn.innerText = "👁️ Ukryj zebrane";
-            toggleHideBtn.style.background = "#334155";
-        }
-    }
-    aktualizujPrzyciskUkrywania();
-
-    toggleHideBtn.addEventListener("click", () => {
-        ukryjZebrane = !ukryjZebrane;
+    hideCollectedChk.addEventListener("change", (e) => {
+        ukryjZebrane = e.target.checked;
         localStorage.setItem("chrabstwo_ukryj_zebrane", ukryjZebrane);
-        aktualizujPrzyciskUkrywania();
         odswiezMarkeryNaMapie();
     });
 
@@ -398,8 +382,17 @@
             localStorage.removeItem("chrabstwo_stany_cukierkow");
             stanyCukierkow = {};
             odswiezMarkeryNaMapie();
+            aktualizujLicznik();
         }
     });
+
+    const adminLoginView = document.getElementById("admin-login-view");
+    const adminLoggedView = document.getElementById("admin-logged-view");
+    const adminPassInput = document.getElementById("admin-pass");
+    const adminLoginBtn = document.getElementById("admin-login-btn");
+    const adminLogoutBtn = document.getElementById("admin-logout-btn");
+    const adminErr = document.getElementById("admin-err");
+    const tempListEl = document.getElementById("temp-list");
 
     let koszykPunktów = []; // Tablica robocza dla nowych punktów
 
@@ -619,7 +612,7 @@
     window.usunZKoszyka = function(idx) {
         koszykPunktów.splice(idx, 1);
         odswiezPodgladKoszyka();
-        odswiezMarkeryNaMapie(); // Natychmiast usuwa marker tymczasowy z mapy
+        odswiezMarkeryNaMapie();
     };
 
     document.getElementById('export-json-btn').addEventListener('click', () => {
