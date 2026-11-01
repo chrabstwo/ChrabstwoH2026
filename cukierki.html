@@ -306,7 +306,7 @@
 </head>
 <body>
 
-<!-- Licznik na górze po środku (tylko zebrane - zielone) -->
+<!-- Licznik na górze po środku -->
 <div id="counter-box">
     🍬 Odwiedzeni NPC: <span id="cnt-total">0</span>
 </div>
@@ -461,7 +461,6 @@
 
     function aktualizujLicznik() {
         let zebraneCount = 0;
-        // Zliczamy tylko te, które mają stan 'mam' (zielone)
         Object.values(stanyCukierkow).forEach(v => {
             if (v === 'mam') zebraneCount++;
         });
@@ -521,6 +520,24 @@
         .then(res => res.json())
         .then(dane => {
             wszystkieCukierki = dane;
+
+            // --- AUTOMATYCZNE CZYSZCZENIE USUNIĘTYCH LOKACJI ---
+            // Usuwa z LocalStorage stany dla ID, których nie ma już w pliku JSON
+            const dostepneId = dane.map(d => String(d.id));
+            let zmodyfikowano = false;
+            
+            Object.keys(stanyCukierkow).forEach(idZPamieci => {
+                if (!dostepneId.includes(idZPamieci)) {
+                    delete stanyCukierkow[idZPamieci];
+                    zmodyfikowano = true;
+                }
+            });
+
+            if (zmodyfikowano) {
+                localStorage.setItem('chrabstwo_stany_cukierkow', JSON.stringify(stanyCukierkow));
+            }
+            // ---------------------------------------------------
+
             odswiezMarkeryNaMapie();
         })
         .catch(err => console.log('Błąd wczytywania cukierki.json:', err));
