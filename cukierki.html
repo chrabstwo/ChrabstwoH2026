@@ -46,8 +46,11 @@
             letter-spacing: 0.5px;
             text-align: center;
         }
-        #counter-box span {
+        #counter-box span.green {
             color: #00b894;
+        }
+        #counter-box span.red {
+            color: #ff5252;
         }
 
         /* Styl mini menu w lewym dolnym rogu (szerokość 260px 1:1 z map.html) */
@@ -293,7 +296,7 @@
 
 <!-- Licznik na górze po środku -->
 <div id="counter-box">
-    🍬 Odwiedzeni NPC: <span id="cnt-total">0</span>
+    🍬 Odwiedzeni NPC: <span id="cnt-total" class="green">0</span> | Nieodwiedzeni NPC: <span id="cnt-unvisited" class="red">0</span>
 </div>
 
 <!-- Modal do powiększania zdjęć -->
@@ -479,11 +482,17 @@
     }
 
     function aktualizujLicznik() {
+        const calkowitaLiczba = wszystkieCukierki.length;
         let zebraneCount = 0;
+        
         Object.values(stanyCukierkow).forEach(v => {
             if (v === 'mam') zebraneCount++;
         });
+
+        const nieodwiedzeniCount = Math.max(0, calkowitaLiczba - zebraneCount);
+
         document.getElementById('cnt-total').innerText = zebraneCount;
+        document.getElementById('cnt-unvisited').innerText = `${nieodwiedzeniCount}/${calkowitaLiczba}`;
     }
 
     function odswiezMarkeryNaMapie() {
@@ -513,7 +522,7 @@
                 buttonZebraneHtml = `<button class="btn-green" onclick="przelaczStanCukierka('${identyfikator}', 'mam')">✓ Zebrane</button>`;
             }
 
-            // Dolny przycisk: jeśli lokacja ma status "brak" (ciemnoszara), pokazujemy czerwony przycisk "Oznacz jako niezebrane" resetujący ten stan. W przeciwnym razie zwykłe ciemnoszare "❌ Nie mam".
+            // Dolny przycisk
             let buttonBrakHtml = "";
             if (jestBrak) {
                 buttonBrakHtml = `<button class="btn-red" onclick="przelaczStanCukierka('${identyfikator}', 'brak')">Oznacz jako niezebrane</button>`;
