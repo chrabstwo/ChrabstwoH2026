@@ -264,14 +264,14 @@
         }
         .collected-btn:hover { background: #019875; }
         .collected-btn.uncollect {
-            background: #ef4444;
+            background: #ff5252; /* Czerwony - kolor niezebranego znacznika */
         }
-        .collected-btn.uncollect:hover { background: #dc2626; }
+        .collected-btn.uncollect:hover { background: #fa3232; }
         
         .not-collected-btn {
             width: 100%;
             padding: 8px;
-            background: #334155;
+            background: #334155; /* Ciemnoszary - kolor znacznika "Nie mam" */
             border: none;
             color: white;
             font-weight: bold;
@@ -394,7 +394,7 @@
     const adminErr = document.getElementById("admin-err");
     const tempListEl = document.getElementById("temp-list");
 
-    let koszykPunktów = []; // Tablica robocza dla nowych punktów oraz edytowanych punktów z bazy
+    let koszykPunktów = []; // Tablica robocza dla nowych i edytowanych punktów
 
     function odswiezPanelAdmina() {
         if (czyAdmin) {
@@ -414,7 +414,7 @@
             adminErr.style.display = "none";
             adminPassInput.value = "";
             odswiezPanelAdmina();
-            odswiezMarkeryNaMapie(); // Odświeża popupy na mapie z uwzględnieniem trybu admina
+            odswiezMarkeryNaMapie();
         } else {
             adminErr.style.display = "block";
         }
@@ -448,7 +448,6 @@
 
     let stanyCukierkow = JSON.parse(localStorage.getItem('chrabstwo_stany_cukierkow') || '{}');
 
-    // Funkcje powiększania zdjęcia w pop-upie
     window.pokazZdjecie = function(url) {
         const modal = document.getElementById("image-modal");
         const modalImg = document.getElementById("modal-img");
@@ -460,12 +459,14 @@
         document.getElementById("image-modal").style.display = "none";
     };
 
-    // Ikona wektorowa (Google Pin) z obsługą 25% przezroczystości dla 'brak'
-    function stwórzIkonęPinezki(stan) {
+    // Ikona wektorowa (Google Pin) z obsługą niebieskiego koloru dla koszyka oraz przezroczystości dla 'brak'
+    function stwórzIkonęPinezki(stan, czyWKoszyku = false) {
         let kolor = '#ff5252'; // Domyślnie czerwony (niezebrane)
         let przezroczystosc = '1';
 
-        if (stan === 'mam') {
+        if (czyWKoszyku) {
+            kolor = '#3b82f6'; // Niebieski dla nowych/edytowanych punktów
+        } else if (stan === 'mam') {
             kolor = '#00b894'; // Zielony (zebrane)
         } else if (stan === 'brak') {
             kolor = '#334155'; // Ciemnoszary (nie mam)
@@ -499,15 +500,19 @@
         warstwyMarkerow.forEach(m => map.removeLayer(m));
         warstwyMarkerow = [];
 
+        // Identyfikator w koszyku dla łatwiejszego sprawdzenia
+        const idsWKoszyku = koszykPunktów.map(p => Number(p.id));
+
         // 1. Wyświetl markery z oficjalnej bazy
         wszystkieCukierki.forEach((item) => {
             const identyfikator = String(item.id);
             const stan = stanyCukierkow[identyfikator] || 'nieznany';
 
-            // Jeśli włączono "Ukryj zebrane" dla punktów zebranych ('mam'), pomijamy wyświetlanie
             if (ukryjZebrane && stan === 'mam') return;
 
-            const marker = L.marker([item.y, item.x], { icon: stwórzIkonęPinezki(stan) });
+            // Sprawdzamy czy punkt jest w koszyku (nowy lub edytowany) -> wtedy będzie niebieski
+            const czyWKoszyku = idsWKoszyku.includes(Number(item.id));
+            const marker = L.marker([item.y, item.x], { icon: stwórzIkonęPinezki(stan, czyWKoszyku) });
 
             const jestZebrana = (stan === 'mam');
             const jestBrak = (stan === 'brak');
@@ -516,9 +521,7 @@
             const przyciskZebraneKlasa = jestZebrana ? "collected-btn uncollect" : "collected-btn";
 
             const przyciskBrakTekst = jestBrak ? "Oznacz jako niezebrane" : "❌ Nie mam";
-            const przyciskBrakKlasa = jestBrak ? "not-collected-btn active" : "not-collected-btn";
 
-            // Dodatkowy panel admina w popupie istniejącego punktu
             let adminEditHtml = "";
             if (czyAdmin) {
                 adminEditHtml = `
@@ -532,12 +535,12 @@
 
             const popupContent = `
                 <div class="popup-box">
-                    <b style="font-size: 13px; color: #f8fafc;">🍬 Cukierki NPC #${item.id}</b><br>
+                    <b style="font-size: 13px; color: #f8fafc;">🍬 Cukierki NPC #${item.id} ${czyWKoszyku ? '<span style="color:#3b82f6;">(Edytowany)</span>' : ''}</b><br>
                     <div style="font-size: 11px; color: #94a3b8; margin: 2px 0 6px 0;">Współrzędne: Y: <b>${item.y}</b>, X: <b>${item.x}</b></div>
                     <img src="${item.img}" class="popup-img" alt="Screen lokalizacji" onclick="pokazZdjecie('${item.img}')" onerror="this.style.display='none'" title="Kliknij, aby powiększyć">
                     
                     <button class="${przyciskZebraneKlasa}" onclick="przelaczStanCukierka('${identyfikator}', 'mam')">${przyciskZebraneTekst}</button>
-                    <button class="${przyciskBrakKlasa}" onclick="przelaczStanCukierka('${identyfikator}', 'brak')">${przyciskBrakTekst}</button>
+                    <button class="not-collected-btn" onclick="przelaczStanCukierka('${identyfikator}', 'brak')">${przyciskBrakTekst}</button>
                     ${adminEditHtml}
                 </div>
             `;
@@ -547,20 +550,24 @@
             warstwyMarkerow.push(marker);
         });
 
-        // 2. Wyświetl tymczasowe markery dodane/edytowane do koszyka sesji przez admina
+        // 2. Wyświetl całkowicie nowe markery dodane przez admina (niebędące w oficjalnej bazie)
         koszykPunktów.forEach((item) => {
-            const marker = L.marker([item.y, item.x], { icon: stwórzIkonęPinezki('nieznany') });
-            
-            const popupContent = `
-                <div class="popup-box">
-                    <b style="font-size: 13px; color: #f8fafc;">🍬 Punkt #${item.id} (W koszyku)</b><br>
-                    <div style="font-size: 11px; color: #94a3b8; margin: 2px 0 6px 0;">Y: <b>${item.y}</b>, X: <b>${item.x}</b></div>
-                    <div style="font-size: 11px; color: #00b894;">Zaktualizowany/nowy w koszyku sesji</div>
-                </div>
-            `;
-            marker.bindPopup(popupContent);
-            marker.addTo(map);
-            warstwyMarkerow.push(marker);
+            // Sprawdzamy czy to punkt całkowicie nowy (nie ma go w oficjalnej bazie)
+            const czyNowy = !wszystkieCukierki.some(b => b.id === item.id);
+            if (czyNowy) {
+                const marker = L.marker([item.y, item.x], { icon: stwórzIkonęPinezki('nieznany', true) });
+                
+                const popupContent = `
+                    <div class="popup-box">
+                        <b style="font-size: 13px; color: #f8fafc;">🍬 Nowy punkt #${item.id}</b><br>
+                        <div style="font-size: 11px; color: #94a3b8; margin: 2px 0 6px 0;">Y: <b>${item.y}</b>, X: <b>${item.x}</b></div>
+                        <div style="font-size: 11px; color: #3b82f6; font-weight: bold;">Nowy punkt w koszyku sesji</div>
+                    </div>
+                `;
+                marker.bindPopup(popupContent);
+                marker.addTo(map);
+                warstwyMarkerow.push(marker);
+            }
         });
 
         aktualizujLicznik();
@@ -583,7 +590,6 @@
         .then(dane => {
             wszystkieCukierki = dane;
 
-            // --- AUTOMATYCZNE CZYSZCZENIE USUNIĘTYCH LOKACJI ---
             const dostepneId = dane.map(d => String(d.id));
             let zmodyfikowano = false;
             
@@ -597,18 +603,16 @@
             if (zmodyfikowano) {
                 localStorage.setItem('chrabstwo_stany_cukierkow', JSON.stringify(stanyCukierkow));
             }
-            // ---------------------------------------------------
 
             odswiezMarkeryNaMapie();
         })
         .catch(err => console.log('Błąd wczytywania cukierki.json:', err));
 
-    // --- SZYBKIE DODAWANIE DO LISTY (ADMIN - automatyczne ID) ---
     window.dodajDoListy = function(y, x) {
         const urlInput = document.getElementById('img-url');
         const imgUrl = urlInput ? urlInput.value.trim() : "";
         
-        const nextId = wszystkieCukierki.length + koszykPunktów.length + 1;
+        const nextId = wszystkieCukierki.length + koszykPunktów.filter(p => !wszystkieCukierki.some(b => b.id === p.id)).length + 1;
 
         const nowyObiekt = { id: nextId, y: y, x: x, img: imgUrl };
         koszykPunktów.push(nowyObiekt);
@@ -618,12 +622,10 @@
         map.closePopup();
     };
 
-    // --- EDYCJA ISTNIEJĄCEGO PUNKTU Z BAZY I DODANIE DO KOSZYKA ---
     window.edytujIstniejacyPunkt = function(id, y, x) {
         const inputEdit = document.getElementById(`edit-img-${id}`);
         const nowyUrl = inputEdit ? inputEdit.value.trim() : "";
 
-        // Sprawdź czy punkt o tym ID już jest w koszyku, jeśli tak to zaktualizuj, jeśli nie to dodaj
         const istniejacyIndex = koszykPunktów.findIndex(p => p.id === id);
         const zaktualizowanyObiekt = { id: id, y: y, x: x, img: nowyUrl };
 
@@ -633,7 +635,6 @@
             koszykPunktów.push(zaktualizowanyObiekt);
         }
 
-        // Zaktualizuj również lokalnie w tablicy wszystkieCukierki, żeby od razu podgląd się zmienił
         const idxBaza = wszystkieCukierki.findIndex(p => p.id === id);
         if (idxBaza !== -1) {
             wszystkieCukierki[idxBaza].img = nowyUrl;
@@ -670,18 +671,16 @@
             return;
         }
 
-        // Łączymy bazę z koszykiem (jeśli edytowano istniejące ID, można zaktualizować pełną bazę)
         let bazaKopia = [...wszystkieCukierki];
         koszykPunktów.forEach(kp => {
             const index = bazaKopia.findIndex(b => b.id === kp.id);
             if (index !== -1) {
-                bazaKopia[index] = kp; // Nadpisujemy zmodyfikowany punkt
+                bazaKopia[index] = kp; 
             } else {
-                bazaKopia.push(kp); // Dodajemy nowy punkt
+                bazaKopia.push(kp); 
             }
         });
         
-        // Sortujemy po ID dla porządku
         bazaKopia.sort((a, b) => a.id - b.id);
 
         const polaczonyJSON = JSON.stringify(bazaKopia, null, 2);
@@ -691,7 +690,6 @@
         });
     });
 
-    // Celownik administratora
     function stwórzCelownikX() {
         return L.divIcon({
             className: 'admin-crosshair',
@@ -704,7 +702,6 @@
     map.on('click', function(e) {
         if (!czyAdmin) return; 
 
-        // Jeśli kliknięto w istniejący marker, Leaflet odpali jego popup, więc tutaj reagujemy tylko na puste pole mapy
         const y = Math.round(e.latlng.lat);
         const x = Math.round(e.latlng.lng);
 
