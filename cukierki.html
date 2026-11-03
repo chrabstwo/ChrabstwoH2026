@@ -249,39 +249,35 @@
         .popup-img:hover {
             opacity: 0.8;
         }
-        .collected-btn {
-            width: 100%;
-            padding: 8px;
-            background: #00b894;
-            border: none;
-            color: white;
-            font-weight: bold;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 12px;
+
+        /* STYLE PRZYCISKÓW W POPUPIE - WYMUSZONE DOKŁADNE KOLORY */
+        .popup-box button.collected-btn {
+            background-color: #00b894 !important;
+            color: white !important;
             margin-top: 6px;
-            text-align: center;
         }
-        .collected-btn:hover { background: #019875; }
-        .collected-btn.uncollect {
-            background: #ff5252; /* Czerwony - kolor niezebranego znacznika */
+        .popup-box button.collected-btn:hover {
+            background-color: #019875 !important;
         }
-        .collected-btn.uncollect:hover { background: #fa3232; }
+
+        /* Przycisk "Oznacz jako niezebrane" (na czerwono jak niezebrany czerwonny pin) */
+        .popup-box button.collected-btn.uncollect {
+            background-color: #ff5252 !important;
+            color: white !important;
+        }
+        .popup-box button.collected-btn.uncollect:hover {
+            background-color: #dc2626 !important;
+        }
         
-        .not-collected-btn {
-            width: 100%;
-            padding: 8px;
-            background: #334155; /* Ciemnoszary - kolor znacznika "Nie mam" */
-            border: none;
-            color: white;
-            font-weight: bold;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 12px;
+        /* Przycisk "Nie mam" (na ciemnoszaro jak nieaktywny pin) */
+        .popup-box button.not-collected-btn {
+            background-color: #334155 !important;
+            color: white !important;
             margin-top: 4px;
-            text-align: center;
         }
-        .not-collected-btn:hover { background: #475569; }
+        .popup-box button.not-collected-btn:hover {
+            background-color: #475569 !important;
+        }
 
         /* --- MODAL DO POWIĘKSZANIA ZDJĘĆ --- */
         #image-modal {
@@ -394,7 +390,7 @@
     const adminErr = document.getElementById("admin-err");
     const tempListEl = document.getElementById("temp-list");
 
-    let koszykPunktów = []; // Tablica robocza dla nowych i edytowanych punktów
+    let koszykPunktów = []; 
 
     function odswiezPanelAdmina() {
         if (czyAdmin) {
@@ -459,7 +455,7 @@
         document.getElementById("image-modal").style.display = "none";
     };
 
-    // Ikona wektorowa (Google Pin) z obsługą niebieskiego koloru dla koszyka oraz przezroczystości dla 'brak'
+    // Ikona wektorowa (Google Pin)
     function stwórzIkonęPinezki(stan, czyWKoszyku = false) {
         let kolor = '#ff5252'; // Domyślnie czerwony (niezebrane)
         let przezroczystosc = '1';
@@ -500,7 +496,6 @@
         warstwyMarkerow.forEach(m => map.removeLayer(m));
         warstwyMarkerow = [];
 
-        // Identyfikator w koszyku dla łatwiejszego sprawdzenia
         const idsWKoszyku = koszykPunktów.map(p => Number(p.id));
 
         // 1. Wyświetl markery z oficjalnej bazy
@@ -510,17 +505,13 @@
 
             if (ukryjZebrane && stan === 'mam') return;
 
-            // Sprawdzamy czy punkt jest w koszyku (nowy lub edytowany) -> wtedy będzie niebieski
             const czyWKoszyku = idsWKoszyku.includes(Number(item.id));
             const marker = L.marker([item.y, item.x], { icon: stwórzIkonęPinezki(stan, czyWKoszyku) });
 
             const jestZebrana = (stan === 'mam');
-            const jestBrak = (stan === 'brak');
 
             const przyciskZebraneTekst = jestZebrana ? "Oznacz jako niezebrane" : "✓ Zebrane";
             const przyciskZebraneKlasa = jestZebrana ? "collected-btn uncollect" : "collected-btn";
-
-            const przyciskBrakTekst = jestBrak ? "Oznacz jako niezebrane" : "❌ Nie mam";
 
             let adminEditHtml = "";
             if (czyAdmin) {
@@ -528,7 +519,7 @@
                     <div style="border-top: 1px dashed #2a2e3d; margin-top: 8px; padding-top: 6px;">
                         <label style="font-size: 10px; color: #94a3b8;">Edytuj link Imgur:</label>
                         <input type="text" id="edit-img-${item.id}" value="${item.img || ''}" placeholder="https://i.imgur.com/..." style="margin-bottom: 4px;">
-                        <button onclick="edytujIstniejacyPunkt(${item.id}, ${item.y}, ${item.x})" style="background: #3b82f6; font-size: 11px; padding: 5px;">💾 Zaktualizuj w koszyku</button>
+                        <button onclick="edytujIstniejacyPunkt(${item.id}, ${item.y}, ${item.x})" style="background: #3b82f6 !important; font-size: 11px; padding: 5px;">💾 Zaktualizuj w koszyku</button>
                     </div>
                 `;
             }
@@ -540,7 +531,7 @@
                     <img src="${item.img}" class="popup-img" alt="Screen lokalizacji" onclick="pokazZdjecie('${item.img}')" onerror="this.style.display='none'" title="Kliknij, aby powiększyć">
                     
                     <button class="${przyciskZebraneKlasa}" onclick="przelaczStanCukierka('${identyfikator}', 'mam')">${przyciskZebraneTekst}</button>
-                    <button class="not-collected-btn" onclick="przelaczStanCukierka('${identyfikator}', 'brak')">${przyciskBrakTekst}</button>
+                    <button class="not-collected-btn" onclick="przelaczStanCukierka('${identyfikator}', 'brak')">❌ Nie mam</button>
                     ${adminEditHtml}
                 </div>
             `;
@@ -550,9 +541,8 @@
             warstwyMarkerow.push(marker);
         });
 
-        // 2. Wyświetl całkowicie nowe markery dodane przez admina (niebędące w oficjalnej bazie)
+        // 2. Wyświetl całkowicie nowe markery dodane przez admina
         koszykPunktów.forEach((item) => {
-            // Sprawdzamy czy to punkt całkowicie nowy (nie ma go w oficjalnej bazie)
             const czyNowy = !wszystkieCukierki.some(b => b.id === item.id);
             if (czyNowy) {
                 const marker = L.marker([item.y, item.x], { icon: stwórzIkonęPinezki('nieznany', true) });
@@ -643,7 +633,6 @@
         odswiezPodgladKoszyka();
         odswiezMarkeryNaMapie();
         map.closePopup();
-        alert(`Zaktualizowano punkt #${id} w koszyku eksportu!`);
     };
 
     function odswiezPodgladKoszyka() {
