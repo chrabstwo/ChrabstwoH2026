@@ -227,7 +227,6 @@
         .popup-box button {
             width: 100%;
             padding: 8px;
-            background: #00b894;
             border: none;
             color: white;
             font-weight: bold;
@@ -235,7 +234,6 @@
             cursor: pointer;
             font-size: 12px;
         }
-        .popup-box button:hover { background: #019875; }
 
         .popup-img {
             max-width: 100%;
@@ -250,32 +248,28 @@
             opacity: 0.8;
         }
 
-        /* STYLE PRZYCISKÓW W POPUPIE - WYMUSZONE DOKŁADNE KOLORY */
-        .popup-box button.collected-btn {
+        /* JEDNOZNACZNE DEDYKOWANE KLASY PRZYCISKÓW */
+        .popup-box button.btn-green {
             background-color: #00b894 !important;
-            color: white !important;
             margin-top: 6px;
         }
-        .popup-box button.collected-btn:hover {
+        .popup-box button.btn-green:hover {
             background-color: #019875 !important;
         }
 
-        /* Przycisk "Oznacz jako niezebrane" (na czerwono jak niezebrany czerwonny pin) */
-        .popup-box button.collected-btn.uncollect {
+        .popup-box button.btn-red {
             background-color: #ff5252 !important;
-            color: white !important;
+            margin-top: 6px;
         }
-        .popup-box button.collected-btn.uncollect:hover {
+        .popup-box button.btn-red:hover {
             background-color: #dc2626 !important;
         }
         
-        /* Przycisk "Nie mam" (na ciemnoszaro jak nieaktywny pin) */
-        .popup-box button.not-collected-btn {
+        .popup-box button.btn-darkgrey {
             background-color: #334155 !important;
-            color: white !important;
             margin-top: 4px;
         }
-        .popup-box button.not-collected-btn:hover {
+        .popup-box button.btn-darkgrey:hover {
             background-color: #475569 !important;
         }
 
@@ -318,7 +312,7 @@
             <input type="checkbox" id="hide-collected-chk" style="accent-color: #00b894; width: 16px; height: 16px; cursor: pointer;">
             <span>Ukryj zebrane</span>
         </label>
-        <button id="reset-progress-btn" class="user-action-btn" style="background: #334155; font-size: 12px;">Zresetuj lokacje</button>
+        <button id="reset-progress-btn" class="user-action-btn" style="background: #334155 !important; font-size: 12px;">Zresetuj lokacje</button>
     </div>
 
     <!-- Wybór eventów -->
@@ -345,8 +339,8 @@
             <div style="font-size: 11px; color: #94a3b8; margin-bottom: 4px;">Robocza lista tej sesji:</div>
             <div id="temp-list"><i>Brak nowych punktów</i></div>
             
-            <button id="export-json-btn" style="background: #10b981; margin-bottom: 6px;">📋 EKSPORTUJ CAŁY JSON</button>
-            <button id="admin-logout-btn" style="background: #ef4444;">Zablokuj panel</button>
+            <button id="export-json-btn" style="background: #10b981 !important; margin-bottom: 6px;">📋 EKSPORTUJ CAŁY JSON</button>
+            <button id="admin-logout-btn" style="background: #ef4444 !important;">Zablokuj panel</button>
         </div>
     </div>
 
@@ -509,9 +503,20 @@
             const marker = L.marker([item.y, item.x], { icon: stwórzIkonęPinezki(stan, czyWKoszyku) });
 
             const jestZebrana = (stan === 'mam');
+            const jestBrak = (stan === 'brak');
 
-            const przyciskZebraneTekst = jestZebrana ? "Oznacz jako niezebrane" : "✓ Zebrane";
-            const przyciskZebraneKlasa = jestZebrana ? "collected-btn uncollect" : "collected-btn";
+            // Logika przycisku zebrania
+            let buttonZebraneHtml = "";
+            if (jestZebrana) {
+                // Gdy jest zebrana -> pokazujemy czerwony przycisk z informacją "Oznacz jako niezebrane"
+                buttonZebraneHtml = `<button class="btn-red" onclick="przelaczStanCukierka('${identyfikator}', 'mam')">Oznacz jako niezebrane</button>`;
+            } else {
+                // Gdy NIE jest zebrana -> pokazujemy zielony przycisk "✓ Zebrane"
+                buttonZebraneHtml = `<button class="btn-green" onclick="przelaczStanCukierka('${identyfikator}', 'mam')">✓ Zebrane</button>`;
+            }
+
+            // Przycisk "Nie mam"
+            let buttonBrakHtml = `<button class="btn-darkgrey" onclick="przelaczStanCukierka('${identyfikator}', 'brak')">❌ Nie mam</button>`;
 
             let adminEditHtml = "";
             if (czyAdmin) {
@@ -530,8 +535,8 @@
                     <div style="font-size: 11px; color: #94a3b8; margin: 2px 0 6px 0;">Współrzędne: Y: <b>${item.y}</b>, X: <b>${item.x}</b></div>
                     <img src="${item.img}" class="popup-img" alt="Screen lokalizacji" onclick="pokazZdjecie('${item.img}')" onerror="this.style.display='none'" title="Kliknij, aby powiększyć">
                     
-                    <button class="${przyciskZebraneKlasa}" onclick="przelaczStanCukierka('${identyfikator}', 'mam')">${przyciskZebraneTekst}</button>
-                    <button class="not-collected-btn" onclick="przelaczStanCukierka('${identyfikator}', 'brak')">❌ Nie mam</button>
+                    ${buttonZebraneHtml}
+                    ${buttonBrakHtml}
                     ${adminEditHtml}
                 </div>
             `;
@@ -710,7 +715,7 @@
                 <label style="font-size: 11px; color: #cbd5e1;">URL do obrazka (Imgur):</label>
                 <input type="text" id="img-url" placeholder="https://i.imgur.com/...">
                 
-                <button onclick="dodajDoListy(${y}, ${x})" style="margin-top: 4px;">➕ DODAJ DO LISTY</button>
+                <button onclick="dodajDoListy(${y}, ${x})" class="btn-green" style="margin-top: 4px;">➕ DODAJ DO LISTY</button>
             </div>
         `;
 
