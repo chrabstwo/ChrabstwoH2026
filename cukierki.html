@@ -394,7 +394,7 @@
     const adminErr = document.getElementById("admin-err");
     const tempListEl = document.getElementById("temp-list");
 
-    let koszykPunktów = []; // Tablica robocza dla nowych punktów
+    let koszykPunktów = []; // Tablica robocza dla nowych punktów oraz edytowanych punktów z bazy
 
     function odswiezPanelAdmina() {
         if (czyAdmin) {
@@ -414,6 +414,7 @@
             adminErr.style.display = "none";
             adminPassInput.value = "";
             odswiezPanelAdmina();
+            odswiezMarkeryNaMapie(); // Odświeża popupy na mapie z uwzględnieniem trybu admina
         } else {
             adminErr.style.display = "block";
         }
@@ -423,6 +424,7 @@
         czyAdmin = false;
         sessionStorage.removeItem("admin_zalogowany");
         odswiezPanelAdmina();
+        odswiezMarkeryNaMapie();
     });
 
     // --- USTAWIANIE GRANIC MAPY ---
@@ -458,16 +460,20 @@
         document.getElementById("image-modal").style.display = "none";
     };
 
-    // Ikona wektorowa (Google Pin)
+    // Ikona wektorowa (Google Pin) z obsługą 25% przezroczystości dla 'brak'
     function stwórzIkonęPinezki(stan) {
         let kolor = '#ff5252'; // Domyślnie czerwony (niezebrane)
+        let przezroczystosc = '1';
 
         if (stan === 'mam') {
             kolor = '#00b894'; // Zielony (zebrane)
+        } else if (stan === 'brak') {
+            kolor = '#334155'; // Ciemnoszary (nie mam)
+            przezroczystosc = '0.25'; // 25% przezroczystości
         }
 
         const pinSvg = `
-            <svg width="30" height="42" viewBox="0 0 384 512" xmlns="http://www.w3.org/2000/svg">
+            <svg width="30" height="42" viewBox="0 0 384 512" xmlns="http://www.w3.org/2000/svg" style="opacity: ${przezroczystosc};">
                 <path fill="${kolor}" stroke="#ffffff" stroke-width="20" d="M172.268 501.67C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0zM192 272c44.183 0 80-35.817 80-80s-35.817-80-80-80-80 35.817-80 80 35.817 80 80 80z"/>
             </svg>
         `;
@@ -498,15 +504,31 @@
             const identyfikator = String(item.id);
             const stan = stanyCukierkow[identyfikator] || 'nieznany';
 
-            // Jeśli użytkownik zaznaczył "Nie mam" ('brak') LUB włączono "Ukryj zebrane" dla punktów zebranych ('mam'), pomijamy wyświetlanie
-            if (stan === 'brak') return;
+            // Jeśli włączono "Ukryj zebrane" dla punktów zebranych ('mam'), pomijamy wyświetlanie
             if (ukryjZebrane && stan === 'mam') return;
 
             const marker = L.marker([item.y, item.x], { icon: stwórzIkonęPinezki(stan) });
 
             const jestZebrana = (stan === 'mam');
+            const jestBrak = (stan === 'brak');
+
             const przyciskZebraneTekst = jestZebrana ? "Oznacz jako niezebrane" : "✓ Zebrane";
             const przyciskZebraneKlasa = jestZebrana ? "collected-btn uncollect" : "collected-btn";
+
+            const przyciskBrakTekst = jestBrak ? "Oznacz jako niezebrane" : "❌ Nie mam";
+            const przyciskBrakKlasa = jestBrak ? "not-collected-btn active" : "not-collected-btn";
+
+            // Dodatkowy panel admina w popupie istniejącego punktu
+            let adminEditHtml = "";
+            if (czyAdmin) {
+                adminEditHtml = `
+                    <div style="border-top: 1px dashed #2a2e3d; margin-top: 8px; padding-top: 6px;">
+                        <label style="font-size: 10px; color: #94a3b8;">Edytuj link Imgur:</label>
+                        <input type="text" id="edit-img-${item.id}" value="${item.img || ''}" placeholder="https://i.imgur.com/..." style="margin-bottom: 4px;">
+                        <button onclick="edytujIstniejacyPunkt(${item.id}, ${item.y}, ${item.x})" style="background: #3b82f6; font-size: 11px; padding: 5px;">💾 Zaktualizuj w koszyku</button>
+                    </div>
+                `;
+            }
 
             const popupContent = `
                 <div class="popup-box">
@@ -515,7 +537,8 @@
                     <img src="${item.img}" class="popup-img" alt="Screen lokalizacji" onclick="pokazZdjecie('${item.img}')" onerror="this.style.display='none'" title="Kliknij, aby powiększyć">
                     
                     <button class="${przyciskZebraneKlasa}" onclick="przelaczStanCukierka('${identyfikator}', 'mam')">${przyciskZebraneTekst}</button>
-                    <button class="not-collected-btn" onclick="przelaczStanCukierka('${identyfikator}', 'brak')">❌ Nie mam</button>
+                    <button class="${przyciskBrakKlasa}" onclick="przelaczStanCukierka('${identyfikator}', 'brak')">${przyciskBrakTekst}</button>
+                    ${adminEditHtml}
                 </div>
             `;
 
@@ -524,15 +547,15 @@
             warstwyMarkerow.push(marker);
         });
 
-        // 2. Wyświetl tymczasowe markery dodane do koszyka sesji przez admina
+        // 2. Wyświetl tymczasowe markery dodane/edytowane do koszyka sesji przez admina
         koszykPunktów.forEach((item) => {
             const marker = L.marker([item.y, item.x], { icon: stwórzIkonęPinezki('nieznany') });
             
             const popupContent = `
                 <div class="popup-box">
-                    <b style="font-size: 13px; color: #f8fafc;">🍬 Nowy punkt #${item.id}</b><br>
+                    <b style="font-size: 13px; color: #f8fafc;">🍬 Punkt #${item.id} (W koszyku)</b><br>
                     <div style="font-size: 11px; color: #94a3b8; margin: 2px 0 6px 0;">Y: <b>${item.y}</b>, X: <b>${item.x}</b></div>
-                    <div style="font-size: 11px; color: #00b894;">Punkt roboczy w koszyku sesji</div>
+                    <div style="font-size: 11px; color: #00b894;">Zaktualizowany/nowy w koszyku sesji</div>
                 </div>
             `;
             marker.bindPopup(popupContent);
@@ -585,7 +608,6 @@
         const urlInput = document.getElementById('img-url');
         const imgUrl = urlInput ? urlInput.value.trim() : "";
         
-        // Automatyczne ID (baza + koszyk + 1)
         const nextId = wszystkieCukierki.length + koszykPunktów.length + 1;
 
         const nowyObiekt = { id: nextId, y: y, x: x, img: imgUrl };
@@ -594,6 +616,33 @@
         odswiezPodgladKoszyka();
         odswiezMarkeryNaMapie();
         map.closePopup();
+    };
+
+    // --- EDYCJA ISTNIEJĄCEGO PUNKTU Z BAZY I DODANIE DO KOSZYKA ---
+    window.edytujIstniejacyPunkt = function(id, y, x) {
+        const inputEdit = document.getElementById(`edit-img-${id}`);
+        const nowyUrl = inputEdit ? inputEdit.value.trim() : "";
+
+        // Sprawdź czy punkt o tym ID już jest w koszyku, jeśli tak to zaktualizuj, jeśli nie to dodaj
+        const istniejacyIndex = koszykPunktów.findIndex(p => p.id === id);
+        const zaktualizowanyObiekt = { id: id, y: y, x: x, img: nowyUrl };
+
+        if (istniejacyIndex !== -1) {
+            koszykPunktów[istniejacyIndex] = zaktualizowanyObiekt;
+        } else {
+            koszykPunktów.push(zaktualizowanyObiekt);
+        }
+
+        // Zaktualizuj również lokalnie w tablicy wszystkieCukierki, żeby od razu podgląd się zmienił
+        const idxBaza = wszystkieCukierki.findIndex(p => p.id === id);
+        if (idxBaza !== -1) {
+            wszystkieCukierki[idxBaza].img = nowyUrl;
+        }
+
+        odswiezPodgladKoszyka();
+        odswiezMarkeryNaMapie();
+        map.closePopup();
+        alert(`Zaktualizowano punkt #${id} w koszyku eksportu!`);
     };
 
     function odswiezPodgladKoszyka() {
@@ -617,14 +666,28 @@
 
     document.getElementById('export-json-btn').addEventListener('click', () => {
         if (koszykPunktów.length === 0) {
-            alert('Lista jest pusta! Dodaj najpierw punkty klikając na mapę.');
+            alert('Lista jest pusta! Dodaj lub edytuj najpierw punkty na mapie.');
             return;
         }
 
-        const polaczonyJSON = JSON.stringify([...wszystkieCukierki, ...koszykPunktów], null, 2);
+        // Łączymy bazę z koszykiem (jeśli edytowano istniejące ID, można zaktualizować pełną bazę)
+        let bazaKopia = [...wszystkieCukierki];
+        koszykPunktów.forEach(kp => {
+            const index = bazaKopia.findIndex(b => b.id === kp.id);
+            if (index !== -1) {
+                bazaKopia[index] = kp; // Nadpisujemy zmodyfikowany punkt
+            } else {
+                bazaKopia.push(kp); // Dodajemy nowy punkt
+            }
+        });
+        
+        // Sortujemy po ID dla porządku
+        bazaKopia.sort((a, b) => a.id - b.id);
+
+        const polaczonyJSON = JSON.stringify(bazaKopia, null, 2);
         
         navigator.clipboard.writeText(polaczonyJSON).then(() => {
-            alert(`Pomyślnie skopiowano ${koszykPunktów.length} nowych punktów do schowka! Wklej je teraz do pliku cukierki.json.`);
+            alert(`Pomyślnie wyeksportowano ${koszykPunktów.length} zmian/nowych punktów (cały zaktualizowany JSON) do schowka! Wklej go do pliku cukierki.json.`);
         });
     });
 
@@ -641,6 +704,7 @@
     map.on('click', function(e) {
         if (!czyAdmin) return; 
 
+        // Jeśli kliknięto w istniejący marker, Leaflet odpali jego popup, więc tutaj reagujemy tylko na puste pole mapy
         const y = Math.round(e.latlng.lat);
         const x = Math.round(e.latlng.lng);
 
