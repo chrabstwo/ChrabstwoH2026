@@ -296,7 +296,7 @@
 
 <!-- Licznik na górze po środku -->
 <div id="counter-box">
-    🍬 Odwiedzeni NPC: <span id="cnt-total" class="green">0</span> | Nieodwiedzeni NPC: <span id="cnt-unvisited" class="red">0</span>
+    🍬 (<span class="red">Nie</span>)Odwiedzeni NPC: <span id="cnt-total" class="green">0</span>/<span id="cnt-unvisited" class="red">0</span>
 </div>
 
 <!-- Modal do powiększania zdjęć -->
@@ -492,7 +492,7 @@
         const nieodwiedzeniCount = Math.max(0, calkowitaLiczba - zebraneCount);
 
         document.getElementById('cnt-total').innerText = zebraneCount;
-        document.getElementById('cnt-unvisited').innerText = `${nieodwiedzeniCount}/${calkowitaLiczba}`;
+        document.getElementById('cnt-unvisited').innerText = nieodwiedzeniCount;
     }
 
     function odswiezMarkeryNaMapie() {
@@ -514,7 +514,6 @@
             const jestZebrana = (stan === 'mam');
             const jestBrak = (stan === 'brak');
 
-            // Górny przycisk (dla zebranych)
             let buttonZebraneHtml = "";
             if (jestZebrana) {
                 buttonZebraneHtml = `<button class="btn-red" onclick="przelaczStanCukierka('${identyfikator}', 'mam')">Oznacz jako niezebrane</button>`;
@@ -522,7 +521,6 @@
                 buttonZebraneHtml = `<button class="btn-green" onclick="przelaczStanCukierka('${identyfikator}', 'mam')">✓ Zebrane</button>`;
             }
 
-            // Dolny przycisk
             let buttonBrakHtml = "";
             if (jestBrak) {
                 buttonBrakHtml = `<button class="btn-red" onclick="przelaczStanCukierka('${identyfikator}', 'brak')">Oznacz jako niezebrane</button>`;
