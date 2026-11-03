@@ -484,12 +484,15 @@
     function aktualizujLicznik() {
         const calkowitaLiczba = wszystkieCukierki.length;
         let zebraneCount = 0;
+        let sprawdzoneBrakCount = 0;
         
         Object.values(stanyCukierkow).forEach(v => {
             if (v === 'mam') zebraneCount++;
+            if (v === 'brak') sprawdzoneBrakCount++;
         });
 
-        const nieodwiedzeniCount = Math.max(0, calkowitaLiczba - zebraneCount);
+        // Nieodwiedzeni to tylko ci, którzy nie mają statusu 'mam' ani 'brak'
+        const nieodwiedzeniCount = Math.max(0, calkowitaLiczba - (zebraneCount + sprawdzoneBrakCount));
 
         document.getElementById('cnt-total').innerText = zebraneCount;
         document.getElementById('cnt-unvisited').innerText = nieodwiedzeniCount;
