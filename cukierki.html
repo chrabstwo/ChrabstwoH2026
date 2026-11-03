@@ -248,7 +248,7 @@
             opacity: 0.8;
         }
 
-        /* JEDNOZNACZNE DEDYKOWANE KLASY PRZYCISKÓW */
+        /* DEDYKOWANE KLASY PRZYCISKÓW */
         .popup-box button.btn-green {
             background-color: #00b894 !important;
             margin-top: 6px;
@@ -505,18 +505,21 @@
             const jestZebrana = (stan === 'mam');
             const jestBrak = (stan === 'brak');
 
-            // Logika przycisku zebrania
+            // Górny przycisk (dla zebranych)
             let buttonZebraneHtml = "";
             if (jestZebrana) {
-                // Gdy jest zebrana -> pokazujemy czerwony przycisk z informacją "Oznacz jako niezebrane"
                 buttonZebraneHtml = `<button class="btn-red" onclick="przelaczStanCukierka('${identyfikator}', 'mam')">Oznacz jako niezebrane</button>`;
             } else {
-                // Gdy NIE jest zebrana -> pokazujemy zielony przycisk "✓ Zebrane"
                 buttonZebraneHtml = `<button class="btn-green" onclick="przelaczStanCukierka('${identyfikator}', 'mam')">✓ Zebrane</button>`;
             }
 
-            // Przycisk "Nie mam"
-            let buttonBrakHtml = `<button class="btn-darkgrey" onclick="przelaczStanCukierka('${identyfikator}', 'brak')">❌ Nie mam</button>`;
+            // Dolny przycisk: jeśli lokacja ma status "brak" (ciemnoszara), pokazujemy czerwony przycisk "Oznacz jako niezebrane" resetujący ten stan. W przeciwnym razie zwykłe ciemnoszare "❌ Nie mam".
+            let buttonBrakHtml = "";
+            if (jestBrak) {
+                buttonBrakHtml = `<button class="btn-red" onclick="przelaczStanCukierka('${identyfikator}', 'brak')">Oznacz jako niezebrane</button>`;
+            } else {
+                buttonBrakHtml = `<button class="btn-darkgrey" onclick="przelaczStanCukierka('${identyfikator}', 'brak')">❌ Nie mam</button>`;
+            }
 
             let adminEditHtml = "";
             if (czyAdmin) {
