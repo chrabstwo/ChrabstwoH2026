@@ -18,15 +18,14 @@ async function run() {
         await page.setViewport({ width: 1280, height: 800 });
 
         console.log('Wchodzę na stronę mta4life.pl...');
-        await page.goto('https://mta4life.pl/', { waitUntil: 'domcontentloaded', timeout: 30000 });
+        // Czekamy aż sieć się uspokoi, żeby widgety zdążyły się w pełni pobrać
+        await page.goto('https://mta4life.pl/', { waitUntil: 'networkidle2', timeout: 40000 });
         
-        // Czekamy chwilę na załadowanie widgetów
-        await new Promise(r => setTimeout(r, 5000));
+        console.log('Czekam dodatkowe 6 sekund na pełne wyrenderowanie...');
+        await new Promise(r => setTimeout(r, 6000));
 
         const fetched = await page.evaluate(() => {
             const results = {};
-            
-            // Mapowanie klas surowców z DOM na czytelne nazwy
             const mapping = {
                 'pszenica': 'Pszenica',
                 'rapeseed': 'Rzepak',
@@ -60,8 +59,6 @@ async function run() {
             return results;
         });
 
-        await browser.close();
-
         console.log('Pobrane surowce:', JSON.stringify(fetched));
 
         if (Object.keys(fetched).length > 0) {
@@ -69,9 +66,14 @@ async function run() {
             await axios.post(workerUrl, fetched);
             console.log('Ceny zostały pomyślnie wysłane do Cloudflare Workera!');
         } else {
+            // Wypiszemy fragment kodu HTML, żeby zobaczyć co dokładnie widzi bot
+            const bodyHTML = await page.evaluate(() => document.body.innerHTML.substring(0, 500));
+            console.log('DEBUG HTML (pierwsze 500 znaków):', bodyHTML);
             console.error('Nie znaleziono cen surowców.');
             process.exit(1);
         }
+
+        await browser.close();
     } catch (error) {
         if (browser) await browser.close();
         console.error('Błąd:', error.message);
