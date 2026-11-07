@@ -18,7 +18,7 @@ jobs:
           node-version: '20'
 
       - name: Instalacja zależności
-        run: npm install puppeteer axios
+        run: npm install puppeteer puppeteer-extra puppeteer-extra-plugin-stealth axios
 
       - name: Uruchomienie skryptu
         run: node scrape.js
