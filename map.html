@@ -569,7 +569,7 @@
     </div>
 
     <div class="menu-section" style="font-size: 10px; color: #64748b; line-height: 1.3; text-align: justify; border-bottom: none; margin-bottom: 0; padding-bottom: 0;">
-        <b>Nota informacyjna:</b> Narzędzie wyłącznie do użytku wewnętrznego organizacji Chrabstwo.
+        <b>Nota informacyjna:</b> Narzędzie wyłącznie do użytku wewnętrznego organizacji Chrabstwo. Mapa ma charakter pomocniczy, zakaz handlu i dystrybucji komercyjnej. Autor projektu nie ponosi żadnej odpowiedzialności za dalsze udostępnianie mapy osobom trzecim. Zgodnie z wytycznymi serwera.
     </div>
 </div>
 
@@ -620,9 +620,7 @@
     const HASLO_ADMINA = "admin2026";
     let czyAdmin = sessionStorage.getItem("admin_zalogowany") === "true";
     let zebraneElementy = [];
-    // Obiekt do śledzenia statusu "✕ Nie mam" dla cukierków: klucz to ID punktu, wartość true/false
     let statusNieMam = JSON.parse(localStorage.getItem(`chrabstwo_niemam_${EVENT_NAME}`) || "{}");
-    
     let ukryjZebrane = localStorage.getItem(`chrabstwo_ukryj_zebrane_${EVENT_NAME}`) === "true";
 
     const hideCollectedChk = document.getElementById("hide-collected-chk");
@@ -751,7 +749,7 @@
                 localStorage.setItem(localMetaKey, new Date().toISOString());
                 aktualizujStatusChmury(true, new Date());
             } else {
-                aktualizujStatusChmury(false, nil, "Błąd zapisu w chmurze");
+                aktualizujStatusChmury(false, null, "Błąd zapisu w chmurze");
             }
         } catch(e) {
             aktualizujStatusChmury(false, null, "Tryb offline");
@@ -830,7 +828,7 @@
         let kolor = jestZebrana ? "#00b894" : "#ff5252";
         if (isCukierki) {
             if (czyNieMam) {
-                kolor = "#6b7280"; // szary dla "✕ Nie mam"
+                kolor = "#6b7280"; 
             } else {
                 kolor = jestZebrana ? "#00b894" : "#ff5252"; 
             }
@@ -896,7 +894,7 @@
         map.closePopup();
 
         try {
-            const response = await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/read`, { method: 'GET' }); // Lekki test lub zapis
+            await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/read`, { method: 'GET' });
             if (akcjaTyp !== 'niemam') {
                 await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/write`, {
                     method: 'POST',
@@ -928,26 +926,22 @@
             let przyciskiHtml = '';
             if (isCukierki) {
                 if (czyNieMam) {
-                    // Gdy ma status "✕ Nie mam" (25% alpha): przyciski to "Odwiedzony NPC" oraz "Oznacz jako niezebrane"
                     przyciskiHtml = `
                         <button class="collected-btn" onclick="przelaczStanPunktu('${strId}', 'odwiedzony')">✓ Odwiedzony NPC</button>
                         <button class="collected-btn uncollect" onclick="przelaczStanPunktu('${strId}', 'niezebrane')" style="margin-top:4px;">Oznacz jako niezebrane</button>
                     `;
                 } else if (jestZebrana) {
-                    // Gdy odznaczony jako odwiedzony (zielony): przyciski to "Oznacz jako niezebrane" oraz "✕ Nie mam"
                     przyciskiHtml = `
                         <button class="collected-btn uncollect" onclick="przelaczStanPunktu('${strId}', 'niezebrane')">Oznacz jako niezebrane</button>
                         <button class="collected-btn grey-btn" onclick="przelaczStanPunktu('${strId}', 'niemam')" style="margin-top:4px;">✕ Nie mam</button>
                     `;
                 } else {
-                    // Bazowy (nieodwiedzony / czerwony): przyciski to "Odwiedzony NPC" oraz "✕ Nie mam"
                     przyciskiHtml = `
                         <button class="collected-btn" onclick="przelaczStanPunktu('${strId}', 'odwiedzony')">✓ Odwiedzony NPC</button>
                         <button class="collected-btn grey-btn" onclick="przelaczStanPunktu('${strId}', 'niemam')" style="margin-top:4px;">✕ Nie mam</button>
                     `;
                 }
             } else {
-                // Standardowe dynie
                 const btnText = jestZebrana ? "✕ Nie mam" : "✓ Zebrane";
                 const btnClass = jestZebrana ? "collected-btn uncollect" : "collected-btn";
                 przyciskiHtml = `<button class="${btnClass}" onclick="przelaczStanPunktu('${strId}', 'zebrane')">${btnText}</button>`;
