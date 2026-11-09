@@ -245,6 +245,33 @@
         }
         .change-item:last-child { border-bottom: none; }
 
+        /* --- GLOBALNY SPINNER ŁADOWANIA NA ŚRODKU --- */
+        #global-spinner-overlay {
+            display: flex;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(11, 14, 20, 0.85);
+            z-index: 999999;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            font-family: sans-serif;
+            color: #e2e8f0;
+            gap: 12px;
+        }
+        .spinner-circle {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #2a2e3d;
+            border-top: 4px solid #00b894;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         /* --- MODAL CLOUD SYNC --- */
         #cloud-overlay {
             display: none;
@@ -408,7 +435,7 @@
             text-align: center;
             cursor: pointer;
             width: 100%;
-            height: 38px; /* Sztywna wysokość zapobiegająca skakaniu */
+            height: 38px;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
@@ -521,6 +548,11 @@
     </style>
 </head>
 <body>
+
+<div id="global-spinner-overlay">
+    <div class="spinner-circle"></div>
+    <div style="font-size: 14px; font-weight: 600; letter-spacing: 0.5px;">Synchronizacja z chmurą...</div>
+</div>
 
 <div id="counter-box">
     <span id="counter-label">Zebranych znajdziek:</span> <span id="collected-count">0</span>/<span id="total-count">0</span>
@@ -704,8 +736,12 @@
     }
 
     async function sprawdzSynchronizacje() {
+        const spinner = document.getElementById("global-spinner-overlay");
+        spinner.style.display = "flex";
+
         const lokalneDane = pobierzLokalne();
-        const czasLokalnyStr = pobierzCzasLokalny().toISOString().slice(0, 16);
+        const czasLokalnyObj = pobierzCzasLokalny();
+        const czasLokalnyStr = czasLokalnyObj.toISOString().slice(0, 16);
 
         try {
             const res = await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/read?discordId=${discordUserId}`);
@@ -715,9 +751,9 @@
             if (!data.exists) {
                 await wyslijDoChmury(lokalneDane, true);
                 zebraneElementy = lokalneDane;
+                spinner.style.display = "none";
                 uruchomMapę();
             } else {
-                const chmuraDane = data.items || [];
                 const chmuraData = data.updatedAt ? new Date(data.updatedAt) : null;
                 const czasChmuraStr = chmuraData ? chmuraData.toISOString().slice(0, 16) : "";
                 
@@ -726,23 +762,33 @@
                     localStorage.setItem(`chrabstwo_niemam_${EVENT_NAME}`, JSON.stringify(statusNieMam));
                 }
 
-                const setLok = new Set(lokalneDane);
-                const setChm = new Set(chmuraDane);
-                const identyczneTablice = setLok.size === setChm.size && [...setLok].every(id => setChm.has(id));
+                // Bezkompromisowe porównanie czasu co do minuty
                 const identyczneCzasy = czasLokalnyStr && czasChmuraStr && (czasLokalnyStr === czasChmuraStr);
 
-                if (identyczneCzasy || identyczneTablice) {
+                if (identyczneCzasy) {
                     zebraneElementy = lokalneDane;
-                    aktualizujStatusChmury(true, chmuraData || pobierzCzasLokalny());
+                    aktualizujStatusChmury(true, chmuraData);
                 } else {
-                    zebraneElementy = lokalneDane;
-                    aktualizujStatusChmury(false, chmuraData, "Konflikt / Niezsynchronizowane");
+                    const chmuraDane = data.items || [];
+                    const setLok = new Set(lokalneDane);
+                    const setChm = new Set(chmuraDane);
+                    const identyczneTablice = setLok.size === setChm.size && [...setLok].every(id => setChm.has(id));
+
+                    if (identyczneTablice) {
+                        zebraneElementy = lokalneDane;
+                        aktualizujStatusChmury(true, chmuraData || czasLokalnyObj);
+                    } else {
+                        zebraneElementy = lokalneDane;
+                        aktualizujStatusChmury(false, chmuraData, "Konflikt / Niezsynchronizowane");
+                    }
                 }
+                spinner.style.display = "none";
                 uruchomMapę();
             }
         } catch (e) {
             zebraneElementy = lokalneDane;
             aktualizujStatusChmury(false, null, "Tryb offline");
+            spinner.style.display = "none";
             uruchomMapę();
         }
     }
@@ -1015,7 +1061,6 @@
         odswiezMarkeryNaMapie();
         map.closePopup();
 
-        // Animacja kropek po lewej stronie z zachowaniem stałej wysokości
         const indicator = document.getElementById("cloud-status-indicator");
         indicator.innerHTML = '<span class="loading-dots"><span></span><span></span><span></span></span>';
 
