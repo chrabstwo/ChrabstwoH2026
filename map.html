@@ -5,8 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chrabstwo 4Life - Mapa Eventowa</title>
     
-    <!-- Sprawdzenie sesji oraz weryfikacja logowania przez Discorda -->
+    <!-- Automatyczne uzupełnienie domyślnych parametrów URL jeśli ich brak -->
     <script>
+        if (!window.location.search.includes('event=')) {
+            window.location.replace('map.html?event=dynie2026&json=dynie26.json');
+        }
+
         const discordUserId = localStorage.getItem("discord_user_id");
         const wygasniecie = localStorage.getItem("login_wygasa");
         const teraz = new Date().getTime();
@@ -30,7 +34,6 @@
             overflow: hidden;
         }
         
-        /* Licznik na górze po środku */
         #counter-box {
             position: fixed;
             top: 20px;
@@ -52,7 +55,6 @@
             color: #00b894;
         }
 
-        /* --- STYL NAGŁÓWKA SIDEBARU Z PRZYCISKAMI --- */
         .sidebar-header {
             display: flex;
             justify-content: space-between;
@@ -96,7 +98,6 @@
             color: #ef4444;
         }
 
-        /* --- ANIMACJA I STYL MINIMALIZACJI SIDEBARU --- */
         #sidebar {
             position: fixed;
             bottom: 20px;
@@ -160,7 +161,6 @@
             letter-spacing: 0.5px;
         }
 
-        /* Przyciski przełączania między eventami */
         .event-btn {
             display: block;
             width: 100%;
@@ -221,7 +221,7 @@
             text-align: center;
         }
 
-        /* Koszyk zmian w panelu admina */
+        /* Koszyk zmian w panelu admina z ciemnym tłem */
         .changes-cart {
             background: #141720;
             border: 1px solid #2a2e3d;
@@ -229,14 +229,15 @@
             padding: 8px;
             margin-top: 8px;
             font-size: 11px;
-            max-height: 120px;
+            max-height: 140px;
             overflow-y: auto;
+            color: #cbd5e1;
         }
         .change-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 4px 0;
+            padding: 5px 0;
             border-bottom: 1px solid #2a2e3d;
         }
         .change-item:last-child { border-bottom: none; }
@@ -440,8 +441,11 @@
         }
         .collected-btn.uncollect { background: #ef4444; }
 
-        .marker-edytowany {
-            filter: hue-rotate(140deg) saturate(3);
+        /* Styl zebranego elementu dla cukierków / dyń */
+        .marker-zebrany {
+            opacity: 0.35;
+            filter: grayscale(80%);
+            transition: opacity 0.3s;
         }
 
         #image-modal {
@@ -573,12 +577,10 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    // --- DYNAMICZNE PARAMETRY EVENTU ---
     const urlParams = new URLSearchParams(window.location.search);
     const EVENT_NAME = urlParams.get('event') || 'dynie2026';
     const JSON_FILE = urlParams.get('json') || 'dynie26.json';
 
-    // Dostosowanie tekstów dla cukierków / dyni
     const isCukierki = EVENT_NAME.includes('cukierki') || JSON_FILE.includes('cukierki');
     if (isCukierki) {
         document.getElementById('counter-label').innerText = 'Odwiedzonych NPC:';
@@ -650,6 +652,7 @@
         try {
             const res = await fetch(`/members/event/${EVENT_NAME}/read?discordId=${discordUserId}`);
             const data = await res.json();
+
             if (!data.exists) {
                 await wyslijDoChmury(lokalneDane, true);
                 aktualizujStatusChmury(true, new Date());
@@ -658,12 +661,18 @@
             } else {
                 const chmuraDane = data.items || [];
                 const chmuraData = data.updatedAt ? new Date(data.updatedAt) : new Date();
+                
                 const setLok = new Set(lokalneDane);
                 const setChm = new Set(chmuraDane);
                 const identyczne = setLok.size === setChm.size && [...setLok].every(id => setChm.has(id));
 
-                zebraneElementy = lokalneDane;
-                aktualizujStatusChmury(identyczne, chmuraData, identyczne ? null : "Niezsynchronizowane zmiany");
+                if (identyczne) {
+                    zebraneElementy = lokalneDane;
+                    aktualizujStatusChmury(true, chmuraData);
+                } else {
+                    zebraneElementy = lokalneDane;
+                    aktualizujStatusChmury(false, null, "Niezsynchronizowane zmiany");
+                }
                 uruchomMapę();
             }
         } catch (e) {
@@ -686,7 +695,7 @@
             indicator.innerHTML = `✓ Zsynchronizowano z chmurą<br><span style="color:#64748b; font-size:10px;">z dnia ${dataStr}</span>`;
         } else {
             indicator.style.color = "#f59e0b";
-            indicator.innerHTML = `⚠️ Niezsynchronizované zmiany<br><span style="color:#64748b; font-size:10px;">Kliknij, aby zarządzać</span>`;
+            indicator.innerHTML = `⚠️ Niezsynchronizowane zmiany<br><span style="color:#64748b; font-size:10px;">Kliknij, aby zarządzać</span>`;
         }
     }
 
@@ -696,15 +705,16 @@
             const res = await fetch(`/members/event/${EVENT_NAME}/read?discordId=${discordUserId}`);
             const data = await res.json();
             if (data.exists && data.updatedAt) {
-                dataChmuryStr = new Date(data.updatedAt).toLocaleString('pl-PL');
+                dataChmuryStr = new Date(data.updatedAt).toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
             }
         } catch(e) {}
-        document.getElementById("local-timestamp").innerText = pobierzCzasLokalny().toLocaleString('pl-PL');
+        document.getElementById("local-timestamp").innerText = pobierzCzasLokalny().toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         document.getElementById("cloud-timestamp").innerText = dataChmuryStr;
         document.getElementById("cloud-overlay").style.display = "flex";
     };
 
     window.zamknijCloudModal = function() { document.getElementById("cloud-overlay").style.display = "none"; };
+    
     window.akcjaPobierzZChmury = async function() {
         try {
             const res = await fetch(`/members/event/${EVENT_NAME}/read?discordId=${discordUserId}`);
@@ -712,11 +722,13 @@
             if (data.exists) {
                 zebraneElementy = data.items || [];
                 zapiszLokalne(zebraneElementy);
+                aktualizujStatusChmury(true, new Date(data.updatedAt || Date.now()));
                 odswiezMarkeryNaMapie();
             }
         } catch(e) {}
         document.getElementById("cloud-overlay").style.display = "none";
     };
+
     window.akcjaWyslijDoChmury = async function() {
         const lokalneDane = pobierzLokalne();
         await wyslijDoChmury(lokalneDane, true);
@@ -733,6 +745,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(migracja ? { discordId: discordUserId, items } : { discordId: discordUserId, items, updatedAt: new Date().toISOString() })
             });
+            localStorage.setItem(localMetaKey, new Date().toISOString());
         } catch(e) {}
     }
 
@@ -746,12 +759,12 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ discordId: discordUserId })
                 });
+                aktualizujStatusChmury(true, new Date());
             } catch(e) {}
             odswiezMarkeryNaMapie();
         }
     });
 
-    // Panel admina logowanie
     const adminLoginView = document.getElementById("admin-login-view");
     const adminLoggedView = document.getElementById("admin-logged-view");
     function odswiezPanelAdmina() {
@@ -784,7 +797,6 @@
         odswiezPanelAdmina();
     });
 
-    // --- MAPA LEAFLET ---
     const imageBounds = [[0, 0], [2048, 2048]];
     const cameraBounds = [[-300, -300], [2348, 2348]];
     const map = L.map('map', { crs: L.CRS.Simple, minZoom: -1, maxZoom: 3, maxBounds: cameraBounds, maxBoundsViscosity: 0.7 });
@@ -802,14 +814,16 @@
     window.zamknijZdjecie = () => { document.getElementById("image-modal").style.display = "none"; };
 
     function stwórzIkonę(jestZebrana, jestZmodyfikowany) {
-        const kolor = jestZebrana ? "#00b894" : "#ff5252";
-        const extraClass = jestZmodyfikowany ? "marker-edytowany" : "";
+        let kolor = jestZebrana ? "#00b894" : "#ff5252";
+        if (jestZmodyfikowany) kolor = "#3b82f6"; // Niebieski dla dodanych/edytowanych przez admina
+
         const pinSvg = `
-            <svg width="30" height="42" viewBox="0 0 384 512" xmlns="http://www.w3.org/2000/svg" class="${extraClass}">
-                <path fill="${jestZmodyfikowany ? '#3b82f6' : kolor}" stroke="#ffffff" stroke-width="20" d="M172.268 501.67C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0zM192 272c44.183 0 80-35.817 80-80s-35.817-80-80-80-80 35.817-80 80 35.817 80 80 80z"/>
+            <svg width="30" height="42" viewBox="0 0 384 512" xmlns="http://www.w3.org/2000/svg">
+                <path fill="${kolor}" stroke="#ffffff" stroke-width="20" d="M172.268 501.67C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0zM192 272c44.183 0 80-35.817 80-80s-35.817-80-80-80-80 35.817-80 80 35.817 80 80 80z"/>
             </svg>
         `;
-        return L.divIcon({ className: 'custom-google-pin', html: pinSvg, iconSize: [30, 42], iconAnchor: [15, 42], popupAnchor: [0, -38] });
+        const klasaIkony = `custom-google-pin ${isCukierki && jestZebrana ? 'marker-zebrany' : (!isCukierki && jestZebrana ? 'marker-zebrany' : '')}`;
+        return L.divIcon({ className: klasaIkony, html: pinSvg, iconSize: [30, 42], iconAnchor: [15, 42], popupAnchor: [0, -38] });
     }
 
     function aktualizujLicznik() {
@@ -835,6 +849,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ discordId: discordUserId, itemId: strId, actionType: akcja, updatedAt: new Date().toISOString() })
             });
+            aktualizujStatusChmury(true, new Date());
         } catch(e) {}
     };
 
@@ -851,8 +866,16 @@
             if (ukryjZebrane && jestZebrana) return;
 
             const marker = L.marker([item.y, item.x], { icon: stwórzIkonę(jestZebrana, jestZmodyfikowany) });
-            const btnText = jestZebrana ? (isCukierki ? "Oznacz jako nieodwiedzonego ✕" : "Oznacz jako niezebrane") : (isCukierki ? "✓ Odwiedzony NPC" : "✓ Zebrane");
-            const btnClass = jestZebrana ? "collected-btn uncollect" : "collected-btn";
+            
+            let btnText, btnClass;
+            if (isCukierki) {
+                btnText = jestZebrana ? "✕ Nie odwiedzony" : "✓ Odwiedzony NPC";
+                btnClass = jestZebrana ? "collected-btn uncollect" : "collected-btn";
+            } else {
+                btnText = jestZebrana ? "Oznacz jako niezebrane" : "✓ Zebrane";
+                btnClass = jestZebrana ? "collected-btn uncollect" : "collected-btn";
+            }
+
             const imgHtml = item.img ? `<img src="${item.img}" class="popup-img" onclick="pokazZdjecie('${item.img}')" onerror="this.style.display='none'">` : '';
             const descHtml = item.desc ? `<div style="font-size:11px; color:#cbd5e1; margin-bottom:6px;">${item.desc}</div>` : '';
 
@@ -872,20 +895,19 @@
         aktualizujLicznik();
     }
 
-    // Wczytywanie odpowiedniego pliku JSON
-    fetch(JSON_FILE)
-        .then(res => res.json())
-        .then(data => {
-            // Nadpisz zmodyfikowanymi z koszyka jeśli istnieją
-            wszystkieElementyDane = data.map(item => {
-                const idStr = String(item.id || '');
-                return modyfikowaneElementy[idStr] ? { ...item, ...modyfikowaneElementy[idStr] } : item;
-            });
-            odswiezMarkeryNaMapie();
-        })
-        .catch(err => console.log('Błąd ładowania JSON:', err));
+    function uruchomMapę() {
+        fetch(JSON_FILE)
+            .then(res => res.json())
+            .then(data => {
+                wszystkieElementyDane = data.map(item => {
+                    const idStr = String(item.id || '');
+                    return modyfikowaneElementy[idStr] ? { ...item, ...modyfikowaneElementy[idStr] } : item;
+                });
+                odswiezMarkeryNaMapie();
+            })
+            .catch(err => console.log('Błąd ładowania JSON:', err));
+    }
 
-    // Panel administratora i koszyk zmian
     function odswiezKoszykZmian() {
         const cartEl = document.getElementById("cart-items");
         const keys = Object.keys(modyfikowaneElementy);
@@ -895,7 +917,8 @@
         }
         let html = '';
         keys.forEach(k => {
-            html += `<div class="change-item"><span>ID: ${k}</span><button onclick="usunZmianę('${k}')" style="background:#ef4444; width:auto; padding:2px 6px; font-size:10px;">Usuń</button></div>`;
+            const isEdytowany = modyfikowaneElementy[k].isEdit ? "(edytowane)" : "";
+            html += `<div class="change-item"><span>ID: ${k} ${isEdytowany}</span><button onclick="usunZmianę('${k}')" style="background:#ef4444; width:auto; padding:2px 6px; font-size:10px;">Usuń</button></div>`;
         });
         cartEl.innerHTML = html;
     }
@@ -914,20 +937,19 @@
         });
     };
 
-    window.zapiszZmianęAdmin = function(y, x, autoId) {
+    window.zapiszZmianęAdmin = function(y, x, targetId, isExisting) {
         const idInput = document.getElementById('admin-item-id');
         const imgInput = document.getElementById('admin-img-url');
-        const descInput = document.getElementById('admin-desc');
 
-        const idVal = idInput ? idInput.value.trim() : autoId;
+        const idVal = idInput ? idInput.value.trim() : targetId;
         const imgVal = imgInput ? imgInput.value.trim() : "";
-        const descVal = descInput ? descInput.value.trim() : "";
 
+        // Zachowaj oryginalny opis jeśli istniał w pliku
+        const existingObj = wszystkieElementyDane.find(i => String(i.id) === String(idVal)) || {};
         const obj = { id: parseInt(idVal), y: y, x: x };
+        if (existingObj.desc) obj.desc = existingObj.desc;
         if (imgVal) obj.img = imgVal;
-        if (descVal) obj.desc = descVal;
 
-        // Sprawdź czy element już istnieje w bazie, jeśli nie dodaj jako nowy
         const existingIdx = wszystkieElementyDane.findIndex(i => String(i.id) === String(idVal));
         if (existingIdx > -1) {
             wszystkieElementyDane[existingIdx] = obj;
@@ -935,17 +957,66 @@
             wszystkieElementyDane.push(obj);
         }
 
-        modyfikowaneElementy[idVal] = obj;
+        modyfikowaneElementy[idVal] = { ...obj, isEdit: isExisting };
         localStorage.setItem(localModKey, JSON.stringify(modyfikowaneElementy));
 
         odswiezKoszykZmian();
         odswiezMarkeryNaMapie();
         map.closePopup();
-        alert(`Zapisano punkt #${idVal} (oznaczony na niebiesko)!`);
     };
 
     map.on('click', function(e) {
         if (!czyAdmin) return;
+    });
+
+    // Obsługa kliknięcia w istniejący marker lub puste miejsce na mapie dla administratora
+    map.on('click', function(e) {
+        if (!czyAdmin) return;
+    });
+
+    // Nadpisanie logiki mapy click by obsługiwać zarówno tworzenie nowego, jak i edycję istniejącego przez podgląd markerów
+    // W Leaflet kliknięcie markera otwiera jego popup. Dodajemy funkcję edycji dla admina bezpośrednio do popupu elementu:
+    const originalOdswiezMarkery = odswiezMarkeryNaMapie;
+    odswiezMarkeryNaMapie = function() {
+        originalOdswiezMarkery();
+        if (!czyAdmin) return;
+
+        // Dodanie możliwości edycji do popupów po załadowaniu markerów
+        warstwyMarkerow.forEach((marker, idx) => {
+            const item = wszystkieElementyDane[idx];
+            if (!item) return;
+            const strId = String(item.id || (idx + 1));
+
+            marker.on('click', function() {
+                if (!czyAdmin) return;
+                setTimeout(() => {
+                    const popupEl = document.querySelector('.leaflet-popup-content');
+                    if (!popupEl) return;
+                    
+                    // Doklejamy formularz edycji Imgura do istniejącego popupu administratora
+                    if (!document.getElementById('admin-edit-section')) {
+                        const editDiv = document.createElement('div');
+                        editDiv.id = 'admin-edit-section';
+                        editDiv.style.cssText = "border-top:1px solid #2a2e3d; margin-top:8px; padding-top:8px;";
+                        editDiv.innerHTML = `
+                            <div style="font-size:10px; color:#3b82f6; font-weight:bold; margin-bottom:4px;">TRYB ADMINA: EDYCJA</div>
+                            <label style="font-size: 10px; color: #cbd5e1;">URL obrazka (Imgur):</label>
+                            <input type="text" id="popup-img-url" value="${item.img || ''}" placeholder="https://i.imgur.com/..." style="width:100%; box-sizing:border-box; padding:5px; background:#141720; border:1px solid #2a2e3d; color:white; border-radius:4px; font-size:11px; margin-bottom:6px;">
+                            <button onclick="zapiszZmianęAdmin(${item.y}, ${item.x}, '${strId}', true)" style="width:100%; padding:6px; background:#3b82f6; border:none; color:white; font-weight:bold; border-radius:4px; cursor:pointer; font-size:11px;">Zaktualizuj Imgur</button>
+                        `;
+                        popupEl.querySelector('.popup-box').appendChild(editDiv);
+                    }
+                }, 50);
+            });
+        });
+    };
+
+    // Globalny klik na puste miejsce mapy do dodawania nowego punktu
+    map.on('click', function(e) {
+        if (!czyAdmin) return;
+        // Sprawdź czy kliknięto w marker
+        if (e.originalEvent.target.closest('.leaflet-marker-icon')) return;
+
         const y = Math.round(e.latlng.lat);
         const x = Math.round(e.latlng.lng);
         const autoId = wszystkieElementyDane.length > 0 ? Math.max(...wszystkieElementyDane.map(i => i.id || 0)) + 1 : 1;
@@ -959,13 +1030,11 @@
         const popupContent = `
             <div class="popup-box">
                 <div style="font-size: 11px; color: #94a3b8; margin-bottom: 4px;">Współrzędne: Y: <b>${y}</b>, X: <b>${x}</b></div>
-                <label style="font-size: 11px; color: #cbd5e1;">ID punktu:</label>
+                <label style="font-size: 11px; color: #cbd5e1;">ID punktu (Auto):</label>
                 <input type="number" id="admin-item-id" value="${autoId}">
-                <label style="font-size: 11px; color: #cbd5e1;">URL obrazka (Imgur):</label>
+                <label style="font-size: 11px; color: #cbd5e1;">URL obrazka (Imgur, opcjonalnie):</label>
                 <input type="text" id="admin-img-url" placeholder="https://i.imgur.com/...">
-                <label style="font-size: 11px; color: #cbd5e1;">Opis / Typ:</label>
-                <textarea id="admin-desc" rows="2" placeholder="Opcjonalny opis..."></textarea>
-                <button onclick="zapiszZmianęAdmin(${y}, ${x}, ${autoId})">Zapisz / Dodaj punkt</button>
+                <button onclick="zapiszZmianęAdmin(${y}, ${x}, ${autoId}, false)">Dodaj punkt</button>
             </div>
         `;
         L.popup().setLatLng(e.latlng).setContent(popupContent).openOn(map);
