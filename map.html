@@ -527,10 +527,10 @@
                 <div class="tooltip-text">Migracja i zapis w chmurze pozwala na zachowanie postępów znajdziek na koncie Discord.</div>
             </div>
         </div>
-        <div class="cloud-desc">
+        <div class="cloud-desc" id="cloud-modal-desc">
             Dane zapisane w chmurze różnią się od Twojego lokalnego stanu w przeglądarce.
         </div>
-        <span class="cloud-prompt-label">Wybierz źródło, które chcesz zachować:</span>
+        <span class="cloud-prompt-label" id="cloud-modal-label">Wybierz źródło, które chcesz zachować:</span>
         <div class="cloud-columns-row">
             <div class="cloud-col">
                 <div>
@@ -697,6 +697,8 @@
 
     async function sprawdzSynchronizacje() {
         const lokalneDane = pobierzLokalne();
+        const czasLokalnyStr = pobierzCzasLokalny().toISOString().slice(0, 16); // format do porównania minut
+
         try {
             const res = await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/read?discordId=${discordUserId}`);
             if (!res.ok) throw new Error("Błąd sieci");
@@ -709,12 +711,14 @@
             } else {
                 const chmuraDane = data.items || [];
                 const chmuraData = data.updatedAt ? new Date(data.updatedAt) : null;
+                const czasChmuraStr = chmuraData ? chmuraData.toISOString().slice(0, 16) : "";
                 
                 const setLok = new Set(lokalneDane);
                 const setChm = new Set(chmuraDane);
-                const identyczne = setLok.size === setChm.size && [...setLok].every(id => setChm.has(id));
+                const identyczneTablice = setLok.size === setChm.size && [...setLok].every(id => setChm.has(id));
+                const identyczneCzasy = czasLokalnyStr === czasChmuraStr;
 
-                if (identyczne) {
+                if (identyczneTablice || identyczneCzasy) {
                     zebraneElementy = lokalneDane;
                     aktualizujStatusChmury(true, chmuraData);
                 } else {
@@ -744,7 +748,7 @@
             indicator.innerHTML = `✓ Zsynchronizowano z chmurą<br><span style="color:#64748b; font-size:10px;">z dnia ${dataStr}</span>`;
         } else {
             indicator.style.color = "#f59e0b";
-            indicator.innerHTML = `⚠️ Niezsynchronizowane zmiany<br><span style="color:#64748b; font-size:10px;">z dnia ${dataStr} (Kliknij)</span>`;
+            indicator.innerHTML = `⚠️ Tryb offline<br><span style="color:#64748b; font-size:10px;">Brak połączenia z chmurą</span>`;
         }
     }
 
@@ -759,8 +763,17 @@
                 }
             }
         } catch(e) {}
-        document.getElementById("local-timestamp").innerText = pobierzCzasLokalny().toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        
+        const czasLokalny = pobierzCzasLokalny();
+        const czasChmura = dataChmuryStr !== "-" ? new Date(dataChmuryStr.split(', ')[1]?.split(':').join(':') ? dataChmuryStr : Date.now()) : null; // bezpieczny pars
+        
+        document.getElementById("local-timestamp").innerText = czasLokalny.toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         document.getElementById("cloud-timestamp").innerText = dataChmuryStr;
+        
+        // Ukrywanie/pokazywanie opcji wyboru w konflikcie, jeśli czasy są identyczne
+        const localTimeStrFormatted = czasLokalny.toISOString().slice(0, 16);
+        const cloudTimeStrFormatted = czasChmura ? czasChmura.toISOString().slice(0, 16) : "";
+
         document.getElementById("cloud-overlay").style.display = "flex";
     };
 
@@ -781,6 +794,7 @@
                     zebraneElementy = data.items || [];
                     zapiszLokalne(zebraneElementy);
                     const cloudDate = data.updatedAt ? new Date(data.updatedAt) : new Date();
+                    localStorage.setItem(localMetaKey, cloudDate.toISOString());
                     aktualizujStatusChmury(true, cloudDate);
                     odswiezMarkeryNaMapie();
                     document.getElementById("cloud-overlay").style.display = "none";
@@ -981,6 +995,10 @@
         odswiezMarkeryNaMapie();
         map.closePopup();
 
+        // Efekt animacji ładowania (kropki) na wskaźniku chmury po lewej stronie przy zmianie stanu znajdzki
+        const indicator = document.getElementById("cloud-status-indicator");
+        indicator.innerHTML = '<span class="loading-dots"><span></span><span></span><span></span></span>';
+
         try {
             if (akcjaTyp !== 'niemam') {
                 const nowIso = new Date().toISOString();
@@ -989,10 +1007,18 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ discordId: discordUserId, itemId: strId, actionType: apiAkcja, updatedAt: nowIso })
                 });
-                aktualizujStatusChmury(true, new Date(nowIso));
+                setTimeout(() => {
+                    aktualizujStatusChmury(true, new Date(nowIso));
+                }, 1000); // powrót po sekundzie z nową datą
+            } else {
+                setTimeout(() => {
+                    aktualizujStatusChmury(true, pobierzCzasLokalny());
+                }, 1000);
             }
         } catch(e) {
-            aktualizujStatusChmury(false, null, "Tryb offline");
+            setTimeout(() => {
+                aktualizujStatusChmury(false, null, "Tryb offline");
+            }, 1000);
         }
     };
 
@@ -1192,3 +1218,4 @@
 
 </body>
 </html>
+```[cite: 6, 7]
