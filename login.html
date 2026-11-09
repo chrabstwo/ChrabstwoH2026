@@ -61,10 +61,12 @@
             width: 16px;
             height: 16px;
         }
+
+        /* --- EFEKTOWNA ANIMACJA PRZYCISKU DISCORDA --- */
         .login-box button {
             width: 100%;
             padding: 12px;
-            background: #5865F2; /* Oficjalny kolor Discorda */
+            background-color: #5865F2; /* Oficjalny kolor Discorda Blurple */
             border: none;
             color: white;
             font-weight: 600;
@@ -75,14 +77,39 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
-            transition: background 0.2s;
+            position: relative;
+            overflow: hidden;
+            user-select: none;
+            transition: background-color 0.17s ease, transform 0.1s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s ease;
+            box-shadow: 0 4px 12px rgba(88, 101, 242, 0.2);
         }
-        .login-box button:hover:not(:disabled) { background: #4752C4; }
+        .login-box button:hover:not(:disabled) {
+            background-color: #4752C4;
+            box-shadow: 0 6px 16px rgba(88, 101, 242, 0.4);
+        }
+        /* Efekt wciśnięcia (klika jak w aplikacji Discorda) */
+        .login-box button:active:not(:disabled) {
+            background-color: #3c45a5;
+            transform: scale(0.97);
+            box-shadow: 0 2px 8px rgba(88, 101, 242, 0.2);
+        }
+        /* Ikona Discorda płynnie podskakująca/powiększająca się */
+        .login-box button svg {
+            transition: transform 0.17s ease;
+        }
+        .login-box button:hover:not(:disabled) svg {
+            transform: scale(1.1);
+        }
+        .login-box button:active:not(:disabled) svg {
+            transform: scale(0.95);
+        }
         .login-box button:disabled {
-            background: #2a2e3d;
+            background-color: #2a2e3d;
             color: #72767d;
             cursor: not-allowed;
+            box-shadow: none;
         }
+
         .error-msg { color: #ff5252; font-size: 13px; margin-top: 12px; text-align: center; display: none; }
 
         .loader-container {
