@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel logowania - Chrabstwo 4Life</title>
+    <title>Logowanie przez Discord - Chrabstwo 4Life</title>
     <style>
         html, body {
             width: 100%;
@@ -25,44 +25,29 @@
             justify-content: center;
             align-items: center;
             z-index: 99999;
-            transition: opacity 0.5s ease;
         }
         .login-box {
             background: #1e222d;
-            padding: 24px;
+            padding: 28px;
             border-radius: 12px;
             box-shadow: 0 8px 24px rgba(0,0,0,0.6);
             text-align: left;
             border: 1px solid #2a2e3d;
-            width: 380px;
+            width: 400px;
         }
         .login-box h3 { 
-            margin: 0 0 16px 0; 
-            font-size: 15px; 
+            margin: 0 0 20px 0; 
+            font-size: 16px; 
             color: #e2e8f0; 
             font-weight: 500;
             text-align: center;
-        }
-        .login-box input[type="password"] {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 12px 16px;
-            margin-bottom: 14px;
-            background: #141720;
-            border: 1px solid #2a2e3d;
-            color: white;
-            border-radius: 8px;
-            font-size: 14px;
-            outline: none;
-        }
-        .login-box input[type="password"]:focus {
-            border-color: #00b894;
+            line-height: 1.4;
         }
         .checkbox-container {
             display: flex;
             align-items: flex-start;
             gap: 10px;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
             cursor: pointer;
             font-size: 13px;
             color: #cbd5e1;
@@ -72,23 +57,33 @@
         .checkbox-container input {
             margin-top: 2px;
             cursor: pointer;
-            accent-color: #00b894;
+            accent-color: #5865F2;
             width: 16px;
             height: 16px;
         }
         .login-box button {
             width: 100%;
             padding: 12px;
-            background: #00b894;
+            background: #5865F2; /* Oficjalny kolor Discorda */
             border: none;
             color: white;
             font-weight: 600;
             border-radius: 8px;
             cursor: pointer;
             font-size: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: background 0.2s;
         }
-        .login-box button:hover { background: #019875; }
-        .error-msg { color: #ff5252; font-size: 13px; margin-top: 10px; text-align: center; display: none; }
+        .login-box button:hover:not(:disabled) { background: #4752C4; }
+        .login-box button:disabled {
+            background: #2a2e3d;
+            color: #72767d;
+            cursor: not-allowed;
+        }
+        .error-msg { color: #ff5252; font-size: 13px; margin-top: 12px; text-align: center; display: none; }
 
         .loader-container {
             display: none;
@@ -102,7 +97,7 @@
             width: 45px;
             height: 45px;
             border: 4px solid #2a2e3d;
-            border-top: 4px solid #00b894;
+            border-top: 4px solid #5865F2;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
             margin-bottom: 15px;
@@ -116,80 +111,140 @@
 <body>
 
 <div id="login-overlay">
+    <!-- Widok logowania -->
     <div id="login-box-wrapper" class="login-box">
-        <h3>Wprowadź hasło, aby uzyskać dostęp do mapy</h3>
-        <input type="password" id="password-input" placeholder="Hasło do mapy" autofocus>
+        <h3>Zaloguj się przez Discord, aby uzyskać dostęp do mapy organizacji</h3>
         
         <label class="checkbox-container">
             <input type="checkbox" id="org-checkbox">
             <span>Oświadczam, że jestem członkiem organizacji Chrabstwo i używam mapy wyłącznie do wspólnych poszukiwań dyń wewnątrz organizacji.</span>
         </label>
 
-        <button id="login-btn">Zaloguj</button>
-        <div id="error" class="error-msg" style="display:none;"></div>
+        <button id="login-btn" disabled>
+            <!-- Ikona SVG Discorda -->
+            <svg width="20" height="20" viewBox="0 0 127.14 96.36" fill="currentColor">
+                <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.79,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.81,11.1,105.25,105.25,0,0,0,32.25-16.15c2.62-27.28-4.51-51.2-19.26-72Zm-72,50.32c-6.08,0-11.08-5.6-11.08-12.5s5-12.5,11.08-12.5c6.11,0,11.11,5.6,11.08,12.5C46.78,52.79,41.8,58.39,35.7,58.39Zm55.76,0c-6.08,0-11.08-5.6-11.08-12.5s5-12.5,11.08-12.5c6.11,0,11.11,5.6,11.08,12.5C102.57,52.79,97.59,58.39,91.46,58.39Z"/>
+            </svg>
+            Zaloguj przez Discord
+        </button>
+        <div id="error" class="error-msg"></div>
     </div>
 
+    <!-- Widok ładowania i weryfikacji -->
     <div id="loader-wrapper" class="loader-container">
         <div class="spinner"></div>
-        <span>Ładowanie mapy organizacji...</span>
+        <span id="loader-text">Wczytywanie i weryfikacja uprawnień...</span>
     </div>
 </div>
 
 <script>
-    const POPRAWNE_HASLO = "4life2026"; // Hasło możesz zmienić tutaj
+    // Konfiguracja OAuth2 Discorda
+    const CLIENT_ID = "706161537852768296"; // Wpisz Client ID z Discord Developer Portal
+    const REDIRECT_URI = window.location.origin + window.location.pathname; // Automatyczny URL powrotu (obecna strona)
+    const WORKER_URL = "https://patient-star-01ba.frebcraft17.workers.dev"; // Twój Cloudflare Worker
 
-    const overlay = document.getElementById("login-overlay");
     const loginBox = document.getElementById("login-box-wrapper");
     const loader = document.getElementById("loader-wrapper");
-    const input = document.getElementById("password-input");
+    const loaderText = document.getElementById("loader-text");
     const checkbox = document.getElementById("org-checkbox");
     const btn = document.getElementById("login-btn");
     const errorDiv = document.getElementById("error");
 
-    // Jeśli użytkownik ma już ważną sesję, od razu wyrzuca go na mapę
-    const wygasniecie = localStorage.getItem("login_wygasa");
-    const teraz = new Date().getTime();
-    if (wygasniecie && teraz < parseInt(wygasniecie)) {
-        window.location.href = "index.html";
+    // Obsługa aktywacji przycisku po zaznaczeniu checkboxa
+    checkbox.addEventListener("change", function() {
+        btn.disabled = !this.checked;
+    });
+
+    // 1. Sprawdzanie tokena powrotnego z Discorda w adresie URL (po autoryzacji)
+    const fragment = new URLSearchParams(window.location.hash.substring(1));
+    const accessToken = fragment.get("access_token");
+
+    if (accessToken) {
+        // Użytkownik właśnie wrócił z logowania Discorda
+        pokażLoader("Pobieranie danych użytkownika z Discorda...");
+        
+        fetch("https://discord.com/api/users/@me", {
+            headers: { authorization: `Bearer ${accessToken}` }
+        })
+        .then(res => res.json())
+        .then(user => {
+            if (!user.id) throw new Error("Nie udało się pobrać ID użytkownika.");
+            
+            // Zapisujemy ID do pamięci przeglądarki
+            localStorage.setItem("discord_user_id", user.id);
+            localStorage.setItem("discord_access_token", accessToken);
+            
+            // Czścimy pasek adresu z tokena ze względów bezpieczeństwa
+            window.history.replaceState({}, document.title, window.location.pathname);
+            
+            // Weryfikujemy w KV przez Workera
+            zweryfikujIWejdz(user.id);
+        })
+        .catch(err => {
+            pokazBladLogowania("Błąd autoryzacji Discord: " + err.message);
+        });
+    } else {
+        // 2. Sprawdzanie czy użytkownik ma już zapisaną sesję w localStorage
+        const savedUserId = localStorage.getItem("discord_user_id");
+        
+        if (savedUserId) {
+            pokażLoader("Sprawdzanie uprawnień w bazie organizacji...");
+            zweryfikujIWejdz(savedUserId);
+        }
     }
 
-    function pokazBlad(tekst) {
+    // Kliknięcie przycisku "Zaloguj przez Discord"
+    btn.addEventListener("click", function() {
+        if (!checkbox.checked) return;
+        
+        // Przekierowanie na oficjalny panel OAuth2 Discorda
+        const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=identify`;
+        window.location.href = discordAuthUrl;
+    });
+
+    // Funkcja odpytująca Cloudflare Workera (/member-read)
+    function zweryfikujIWejdz(userId) {
+        loaderText.innerText = "Weryfikacja uprawnień członka organizacji...";
+
+        fetch(`${WORKER_URL}/member-read?userId=${userId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.allowed) {
+                    loaderText.innerText = "Zalogowano pomyślnie! Ładowanie mapy...";
+                    setTimeout(() => {
+                        window.location.href = "index.html"; // Przejście do mapy
+                    }, 1000);
+                } else {
+                    // Brak rangi / brak w bazie KV
+                    wylogujIBlad("Odmowa dostępu: Twoje konto nie posiada wymaganej rangi 'Członek org' na serwerze Discord.");
+                }
+            })
+            .catch(err => {
+                wylogujIBlad("Błąd połączenia z serwerem weryfikacji.");
+            });
+    }
+
+    function pokażLoader(tekst) {
+        loginBox.style.display = "none";
+        loader.style.display = "flex";
+        loaderText.innerText = tekst;
+    }
+
+    function pokazBladLogowania(tekst) {
+        loginBox.style.display = "block";
+        loader.style.display = "none";
         errorDiv.innerText = tekst;
         errorDiv.style.display = "block";
     }
 
-    function zaloguj() {
-        errorDiv.style.display = "none";
-
-        if (!checkbox.checked) {
-            pokazBlad("Musisz zaznaczyć oświadczenie członka organizacji!");
-            return;
-        }
-
-        if (input.value !== POPRAWNE_HASLO) {
-            pokazBlad("Błędne hasło!");
-            return;
-        }
-
-        // Zapis sesji na 1 godzinę
-        const zaWodzine = new Date().getTime() + (60 * 60 * 1000);
-        localStorage.setItem("login_wygasa", zaWodzine);
-
-        // Pokazujemy ładujące kółko i po chwili przenosimy do index.html
-        loginBox.style.display = "none";
-        loader.style.display = "flex";
-
-        setTimeout(() => {
-            window.location.href = "index.html";
-        }, 2000);
+    function wylogujIBlad(tekst) {
+        localStorage.removeItem("discord_user_id");
+        localStorage.removeItem("discord_access_token");
+        loginBox.style.display = "block";
+        loader.style.display = "none";
+        errorDiv.innerText = tekst;
+        errorDiv.style.display = "block";
     }
-
-    btn.addEventListener("click", zaloguj);
-    input.addEventListener("keypress", function(e) {
-        if (e.key === "Enter") {
-            zaloguj();
-        }
-    });
 </script>
 
 </body>
