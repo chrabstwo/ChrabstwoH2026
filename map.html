@@ -668,6 +668,8 @@
     const EVENT_NAME = urlParams.get('event') || 'dynie2026';
     const JSON_FILE = urlParams.get('json') || 'dynie26.json';
 
+    let czyJestKonflikt = false; // Żelazna flaga blokująca automatyczne nadpisywanie w tle po konflikcie
+
     const isCukierki = EVENT_NAME.includes('cukierki') || JSON_FILE.includes('cukierki');
     if (isCukierki) {
         document.getElementById('counter-label').innerText = 'Odwiedzonych NPC:';
@@ -741,7 +743,7 @@
 
         const lokalneDane = pobierzLokalne();
         const czasLokalnyObj = pobierzCzasLokalny();
-        const czasLokalnyIsoSec = czasLokalnyObj.toISOString().slice(0, 19); // Dokładność do sekund YYYY-MM-DDTHH:MM:SS
+        const czasLokalnyIsoSec = czasLokalnyObj.toISOString().slice(0, 19);
 
         try {
             const res = await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/read?discordId=${discordUserId}`);
@@ -751,6 +753,7 @@
             if (!data.exists) {
                 await wyslijDoChmury(lokalneDane, true);
                 zebraneElementy = lokalneDane;
+                czyJestKonflikt = false;
                 spinner.style.display = "none";
                 uruchomMapę();
             } else {
@@ -762,7 +765,6 @@
                     localStorage.setItem(`chrabstwo_niemam_${EVENT_NAME}`, JSON.stringify(statusNieMam));
                 }
 
-                // Sprawdzamy pełną zgodność co do sekundy oraz zgodność zawartości tablic i "niemam"
                 const identyczneCzasy = czasLokalnyIsoSec && czasChmuraIsoSec && (czasLokalnyIsoSec === czasChmuraIsoSec);
                 
                 const chmuraDane = data.items || [];
@@ -775,10 +777,11 @@
 
                 if (identyczneCzasy || (identyczneTablice && identyczneNiemam)) {
                     zebraneElementy = lokalneDane;
+                    czyJestKonflikt = false;
                     aktualizujStatusChmury(true, chmuraData || czasLokalnyObj);
                 } else {
-                    // Skoro dane lokalne różnią się od chmury, NIE synchronizujemy automatycznie!
-                    // Ustawiamy status konfliktu, aby użytkownik sam zdecydował przyciskiem.
+                    // Wykryto różnicę! Ustawiamy flagę konfliktu - od teraz ŻADNE kliknięcie nie pójdzie samo do chmury
+                    czyJestKonflikt = true;
                     zebraneElementy = lokalneDane;
                     aktualizujStatusChmury(false, chmuraData, "Konflikt / Niezsynchronizowane");
                 }
@@ -786,7 +789,7 @@
                 uruchomMapę();
             }
         } catch (e) {
-            // Jesteśmy offline – ładujemy lokalne dane, zero konfliktu, zero zapisów do chmury
+            czyJestKonflikt = true; // Offline oznacza brak pełnej synchronizacji
             zebraneElementy = lokalneDane;
             aktualizujStatusChmury(false, null, "Tryb offline");
             spinner.style.display = "none";
@@ -844,8 +847,7 @@
         const lokalnyIsoSec = lokalnyDateObj.toISOString().slice(0, 19);
         const chmuraIsoSec = chmuraDateObj ? chmuraDateObj.toISOString().slice(0, 19) : "";
 
-        // Jeśli dane są identyczne co do sekundy, pomijamy modal konfliktu i odświeżamy status na zielono
-        if (lokalnyIsoSec && chmuraIsoSec && (lokalnyIsoSec === chmuraIsoSec)) {
+        if (!czyJestKonflikt && lokalnyIsoSec && chmuraIsoSec && (lokalnyIsoSec === chmuraIsoSec)) {
             aktualizujStatusChmury(true, chmuraDateObj);
             return;
         }
@@ -877,6 +879,7 @@
                     }
                     const cloudDate = data.updatedAt ? new Date(data.updatedAt) : new Date();
                     localStorage.setItem(localMetaKey, cloudDate.toISOString());
+                    czyJestKonflikt = false; // Rozwiązano konflikt!
                     aktualizujStatusChmury(true, cloudDate);
                     odswiezMarkeryNaMapie();
                     document.getElementById("cloud-overlay").style.display = "none";
@@ -909,6 +912,7 @@
 
         if (success) {
             zebraneElementy = lokalneDane;
+            czyJestKonflikt = false; // Rozwiązano konflikt!
             document.getElementById("cloud-overlay").style.display = "none";
         } else {
             alert("Nie udało się wysłać danych do chmury. Sprawdź połączenie z internetem.");
@@ -949,6 +953,7 @@
         if (confirm("Czy na pewno chcesz zresetować postęp w tym evencie?")) {
             zebraneElementy = [];
             statusNieMam = {};
+            czyJestKonflikt = false;
             localStorage.removeItem(`chrabstwo_niemam_${EVENT_NAME}`);
             zapiszLokalne([]);
             try {
@@ -1083,12 +1088,20 @@
         odswiezMarkeryNaMapie();
         map.closePopup();
 
-        // 1. Zapisujemy lokalnie (co od razu aktualizuje czas lokalny i stempel w pamięci)
+        // 1. Zawsze zapisujemy lokalnie w przeglądarce
         zapiszLokalne(zebraneElementy);
 
-        // 2. Próbujemy wysłać zmianę do chmury w tle.
-        // Jeśli sieć padła lub jest konflikt, złapiemy błąd/odrzucimy, ale stan lokalny jest bezpieczny!
         const indicator = document.getElementById("cloud-status-indicator");
+
+        // KLUCZOWY WARUNEK: Jeśli jesteśmy w stanie konfliktu/offline, NIE WYSYŁAMY nic do chmury!
+        // Użytkownik musi najpierw ręcznie zdecydować (Wyślij / Pobierz).
+        if (czyJestKonflikt) {
+            indicator.style.color = "#f59e0b";
+            indicator.innerHTML = `⚠️ Konflikt / Niezsynchronizowane<br><span style="color:#64748b; font-size:10px;">Zapisano lokalnie (Kliknij)</span>`;
+            return;
+        }
+
+        // 2. Jeśli nie ma konfliktu, wysyłamy normalnie do chmury
         indicator.innerHTML = '<span class="loading-dots"><span></span><span></span><span></span></span>';
 
         try {
@@ -1115,7 +1128,7 @@
                 throw new Error("Błąd zapisu w chmurze");
             }
         } catch(e) {
-            // Jeśli wystąpił problem z siecią, bezpiecznie przechodzimy w tryb offline bez naruszania danych
+            czyJestKonflikt = true;
             setTimeout(() => {
                 aktualizujStatusChmury(false, null, "Tryb offline");
             }, 800);
