@@ -139,9 +139,9 @@
 
 <script>
     // Konfiguracja OAuth2 Discorda
-    const CLIENT_ID = "706161537852768296"; // Wpisz Client ID z Discord Developer Portal
-    const REDIRECT_URI = window.location.origin + window.location.pathname; // Automatyczny URL powrotu (obecna strona)
-    const WORKER_URL = "https://patient-star-01ba.frebcraft17.workers.dev"; // Twój Cloudflare Worker
+    const CLIENT_ID = "706161537852768296"; 
+    const REDIRECT_URI = window.location.origin + window.location.pathname; 
+    const WORKER_URL = "https://patient-star-01ba.frebcraft17.workers.dev"; 
 
     const loginBox = document.getElementById("login-box-wrapper");
     const loader = document.getElementById("loader-wrapper");
@@ -150,17 +150,15 @@
     const btn = document.getElementById("login-btn");
     const errorDiv = document.getElementById("error");
 
-    // Obsługa aktywacji przycisku po zaznaczeniu checkboxa
     checkbox.addEventListener("change", function() {
         btn.disabled = !this.checked;
     });
 
-    // 1. Sprawdzanie tokena powrotnego z Discorda w adresie URL (po autoryzacji)
+    // 1. Sprawdzanie tokena powrotnego z Discorda w adresie URL
     const fragment = new URLSearchParams(window.location.hash.substring(1));
     const accessToken = fragment.get("access_token");
 
     if (accessToken) {
-        // Użytkownik właśnie wrócił z logowania Discorda
         pokażLoader("Pobieranie danych użytkownika z Discorda...");
         
         fetch("https://discord.com/api/users/@me", {
@@ -170,21 +168,18 @@
         .then(user => {
             if (!user.id) throw new Error("Nie udało się pobrać ID użytkownika.");
             
-            // Zapisujemy ID do pamięci przeglądarki
             localStorage.setItem("discord_user_id", user.id);
             localStorage.setItem("discord_access_token", accessToken);
             
-            // Czścimy pasek adresu z tokena ze względów bezpieczeństwa
             window.history.replaceState({}, document.title, window.location.pathname);
             
-            // Weryfikujemy w KV przez Workera
             zweryfikujIWejdz(user.id);
         })
         .catch(err => {
             pokazBladLogowania("Błąd autoryzacji Discord: " + err.message);
         });
     } else {
-        // 2. Sprawdzanie czy użytkownik ma już zapisaną sesję w localStorage
+        // 2. Sprawdzanie istniejącej sesji
         const savedUserId = localStorage.getItem("discord_user_id");
         
         if (savedUserId) {
@@ -193,30 +188,28 @@
         }
     }
 
-    // Kliknięcie przycisku "Zaloguj przez Discord"
     btn.addEventListener("click", function() {
         if (!checkbox.checked) return;
         
-        // Przekierowanie na oficjalny panel OAuth2 Discorda
         const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=identify`;
         window.location.href = discordAuthUrl;
     });
 
-    // Funkcja odpytująca Cloudflare Workera (/member-read)
-function zweryfikujIWejdz(userId) {
+    // Funkcja odpytująca Cloudflare Workera (/members/read)
+    function zweryfikujIWejdz(userId) {
         loaderText.innerText = "Weryfikacja uprawnień członka organizacji...";
 
-        fetch(`${WORKER_URL}/member-read?userId=${userId}`)
+        fetch(`${WORKER_URL}/members/read?userId=${userId}`)
             .then(res => res.json())
             .then(data => {
                 if (data.allowed) {
                     // Ustawiamy ważność sesji na 1 godzinę
-                    const zaWodzine = new Date().getTime() + (60 * 60 * 1000);
-                    localStorage.setItem("login_wygasa", zaWodzine);
+                    const zaGodzine = new Date().getTime() + (60 * 60 * 1000);
+                    localStorage.setItem("login_wygasa", zaGodzine);
 
                     loaderText.innerText = "Zalogowano pomyślnie! Ładowanie mapy...";
                     setTimeout(() => {
-                        window.location.href = "index.html";
+                        window.location.href = "map.html";
                     }, 1000);
                 } else {
                     wylogujIBlad("Odmowa dostępu: Twoje konto nie posiada wymaganej rangi 'Członek org' na serwerze Discord.");
@@ -243,6 +236,7 @@ function zweryfikujIWejdz(userId) {
     function wylogujIBlad(tekst) {
         localStorage.removeItem("discord_user_id");
         localStorage.removeItem("discord_access_token");
+        localStorage.removeItem("login_wygasa");
         loginBox.style.display = "block";
         loader.style.display = "none";
         errorDiv.innerText = tekst;
