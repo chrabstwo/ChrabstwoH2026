@@ -398,12 +398,11 @@
             display: inline-flex;
             align-items: center;
             gap: 3px;
-            margin-left: 2px;
         }
         .loading-dots span {
             animation: blink 1.4s infinite both;
-            height: 5px;
-            width: 5px;
+            height: 6px;
+            width: 6px;
             background-color: currentColor;
             display: inline-block;
             border-radius: 50%;
@@ -749,7 +748,7 @@
     window.akcjaPobierzZChmury = async function() {
         const btn = document.getElementById("btn-download-cloud");
         const orgHtml = btn.innerHTML;
-        btn.innerHTML = 'Pobieram<span class="loading-dots"><span></span><span></span><span></span></span>';
+        btn.innerHTML = '<span class="loading-dots"><span></span><span></span><span></span></span>';
         btn.disabled = true;
 
         try {
@@ -779,7 +778,7 @@
     window.akcjaWyslijDoChmury = async function() {
         const btn = document.getElementById("btn-upload-cloud");
         const orgHtml = btn.innerHTML;
-        btn.innerHTML = 'Wysyłam<span class="loading-dots"><span></span><span></span><span></span></span>';
+        btn.innerHTML = '<span class="loading-dots"><span></span><span></span><span></span></span>';
         btn.disabled = true;
 
         const lokalneDane = pobierzLokalne();
