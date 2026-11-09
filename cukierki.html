@@ -134,7 +134,53 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        .admin-box input, .admin-box textarea {
+
+        /* --- SEKCJA POSTĘPU I PRZYCISKÓW ZNAJDZIEK --- */
+        .progress-box {
+            background: #141720;
+            border: 1px solid #2a2e3d;
+            border-radius: 6px;
+            padding: 8px 10px;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+        .progress-bar-bg {
+            width: 100%;
+            height: 6px;
+            background: #2a2e3d;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: #00b894;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .action-row {
+            display: flex;
+            gap: 6px;
+        }
+        .action-row button {
+            flex: 1;
+            padding: 6px;
+            background: #141720;
+            border: 1px solid #2a2e3d;
+            color: #cbd5e1;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.2s;
+        }
+        .action-row button:hover {
+            background: #2a2e3d;
+            color: white;
+            border-color: #00b894;
+        }
+
+        .admin-box input, .admin-box textarea, .admin-box select {
             width: 100%;
             box-sizing: border-box;
             padding: 8px 10px;
@@ -147,20 +193,8 @@
             outline: none;
             font-family: sans-serif;
         }
-        .admin-box input:focus, .admin-box textarea:focus {
+        .admin-box input:focus, .admin-box textarea:focus, .admin-box select:focus {
             border-color: #00b894;
-        }
-        .admin-box select {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 8px 10px;
-            margin-bottom: 8px;
-            background: #141720;
-            border: 1px solid #2a2e3d;
-            color: white;
-            border-radius: 6px;
-            font-size: 13px;
-            outline: none;
         }
         .admin-box button {
             width: 100%;
@@ -250,8 +284,23 @@
             border-radius: 6px;
             cursor: pointer;
             font-size: 12px;
+            margin-bottom: 6px;
         }
         .popup-box button:hover { background: #019875; }
+        
+        .collect-btn {
+            background: #3b82f6 !important;
+        }
+        .collect-btn:hover {
+            background: #2563eb !important;
+        }
+        .collected-btn {
+            background: #ef4444 !important;
+        }
+        .collected-btn:hover {
+            background: #dc2626 !important;
+        }
+
         .copy-info {
             color: #00b894;
             font-size: 11px;
@@ -266,6 +315,13 @@
             margin: 8px 0;
             line-height: 1.4;
             word-break: break-word;
+        }
+
+        /* Styl zebranego markera na mapie (półprzezroczysty) */
+        .marker-zebrany {
+            opacity: 0.35;
+            filter: grayscale(80%);
+            transition: opacity 0.3s;
         }
 
         /* --- MODAL DO POWIĘKSZANIA ZDJĘĆ --- */
@@ -316,7 +372,25 @@
         </div>
     </div>
 
-    <!-- Panel Administratora / Dodawania punktów cukierków -->
+    <!-- Licznik i zarządzanie znajdźkami -->
+    <div class="menu-section">
+        <h4>Postęp znajdziek</h4>
+        <div class="progress-box">
+            <div id="counter-text" style="font-weight: bold; color: #e2e8f0; display: flex; justify-content: space-between;">
+                <span>Zebrano:</span>
+                <span id="licznik-znajdziek">0 / 0</span>
+            </div>
+            <div class="progress-bar-bg">
+                <div id="progress-fill" class="progress-bar-fill"></div>
+            </div>
+        </div>
+        <div class="action-row">
+            <button id="btn-ukryj" onclick="przelaczUkrywanieZebranych()">Ukryj zebrane</button>
+            <button onclick="zresetujPostep()">Zresetuj lokacje</button>
+        </div>
+    </div>
+
+    <!-- Panel Administratora -->
     <div class="menu-section admin-box">
         <h4>Panel Administratora</h4>
         <div id="admin-login-view">
@@ -330,7 +404,7 @@
         </div>
     </div>
 
-    <!-- Regulamin / Nota informacyjna -->
+    <!-- Nota informacyjna -->
     <div class="menu-section" style="font-size: 10px; color: #64748b; line-height: 1.3; text-align: justify; border-bottom: none; margin-bottom: 0; padding-bottom: 0;">
         <b>Nota informacyjna:</b> Narzędzie wyłącznie do użytku wewnętrznego organizacji Chrabstwo. Mapa ma charakter pomocniczy, zakaz handlu i dystrybucji komercyjnej. Autor projektu nie ponosi żadnej odpowiedzialności za dalsze udostępnianie mapy osobom trzecim. Zgodnie z wytycznymi serwera.
     </div>
@@ -366,13 +440,11 @@
         }
     }
 
-    // Przywrócenie stanu zminimalizowanego przy odświeżeniu strony
     if (localStorage.getItem("sidebar_minimized_cukierki") === "true") {
         sidebar.classList.add("minimized");
     }
 
     const HASLO_ADMINA = "admin2026"; 
-
     let czyAdmin = sessionStorage.getItem("admin_zalogowany_cukierki") === "true";
 
     const adminLoginView = document.getElementById("admin-login-view");
@@ -411,7 +483,7 @@
         odswiezPanelAdmina();
     });
 
-    // --- USTAWIANIE GRANIC MAPY ---
+    // --- MAPA LEAFLET ---
     const imageBounds = [[0, 0], [2048, 2048]]; 
     const cameraBounds = [[-300, -300], [2348, 2348]]; 
 
@@ -430,7 +502,58 @@
     let warstwyMarkerow = [];
     let tymczasowyCelownik = null;
 
-    // Definicje wektorowych ikonek SVG dla typów NPC / cukierków
+    let zebraneCukierki = JSON.parse(localStorage.getItem("zebrane_cukierki_2026") || "[]");
+    let ukryjZebraneStan = localStorage.getItem("ukryj_zebrane_cukierki") === "true";
+
+    // Aktualizacja etykiety przycisku ukrywania
+    function aktualizujPrzyciskUkrywania() {
+        const btn = document.getElementById("btn-ukryj");
+        if (btn) {
+            btn.textContent = ukryjZebraneStan ? "Pokaż zebrane" : "Ukryj zebrane";
+            btn.style.borderColor = ukryjZebraneStan ? "#00b894" : "#2a2e3d";
+        }
+    }
+    aktualizujPrzyciskUkrywania();
+
+    window.przelaczUkrywanieZebranych = function() {
+        ukryjZebraneStan = !ukryjZebraneStan;
+        localStorage.setItem("ukryj_zebrane_cukierki", ukryjZebraneStan);
+        aktualizujPrzyciskUkrywania();
+        odswiezMarkeryNaMapie();
+    };
+
+    window.zresetujPostep = function() {
+        if (confirm("Czy na pewno chcesz zresetować postęp wszystkich zebranych cukierków?")) {
+            zebraneCukierki = [];
+            localStorage.removeItem("zebrane_cukierki_2026");
+            odswiezMarkeryNaMapie();
+        }
+    };
+
+    window.przelaczStatusCukierka = function(id) {
+        if (zebraneCukierki.includes(id)) {
+            zebraneCukierki = zebraneCukierki.filter(item => item !== id);
+        } else {
+            zebraneCukierki.push(id);
+        }
+        localStorage.setItem("zebrane_cukierki_2026", JSON.stringify(zebraneCukierki));
+        odswiezMarkeryNaMapie();
+        map.closePopup();
+    };
+
+    function aktualizujLicznik() {
+        const total = wszystkieElementyCukierkow.length;
+        const zebrano = zebraneCukierki.length;
+        const licznikEl = document.getElementById("licznik-znajdziek");
+        const fillEl = document.getElementById("progress-fill");
+
+        if (licznikEl) licznikEl.textContent = `${zebrano} / ${total}`;
+        if (fillEl) {
+            const procent = total > 0 ? (zebrano / total) * 100 : 0;
+            fillEl.style.width = `${procent}%`;
+        }
+    }
+
     function pobierzStylTypu(typ) {
         switch(typ) {
             case 'npc_cukierki': 
@@ -446,32 +569,37 @@
         }
     }
 
-    function stwórzIkonęCukierkow(typ) {
-        const styl = pobierzStylTypu(typ);
-        return L.divIcon({
-            className: 'custom-vector-icon',
-            html: styl.svg,
-            iconSize: [38, 38],
-            iconAnchor: [19, 19],
-            popupAnchor: [0, -19]
-        });
-    }
-
     function odswiezMarkeryNaMapie() {
         warstwyMarkerow.forEach(m => map.removeLayer(m));
         warstwyMarkerow = [];
 
-        wszystkieElementyCukierkow.forEach((item) => {
+        wszystkieElementyCukierkow.forEach((item, index) => {
+            const idPunktu = item.id || `${item.y}_${item.x}_${index}`;
+            const czyZebrany = zebraneCukierki.includes(idPunktu);
+
+            if (ukryjZebraneStan && czyZebrany) {
+                return; // Pomiń renderowanie zebranego punktu
+            }
+
             const styl = pobierzStylTypu(item.type);
-            const marker = L.marker([item.y, item.x], {
-                icon: stwórzIkonęCukierkow(item.type)
+            const customIcon = L.divIcon({
+                className: `custom-vector-icon ${czyZebrany ? 'marker-zebrany' : ''}`,
+                html: styl.svg,
+                iconSize: [38, 38],
+                iconAnchor: [19, 19],
+                popupAnchor: [0, -19]
             });
+
+            const marker = L.marker([item.y, item.x], { icon: customIcon });
 
             const popupContent = `
                 <div class="popup-box">
                     <b style="font-size: 13px; color: #f8fafc;">${styl.nazwa}</b><br>
                     <div style="font-size: 11px; color: #94a3b8; margin: 2px 0 6px 0;">Współrzędne: Y: <b>${item.y}</b>, X: <b>${item.x}</b></div>
                     <div class="desc-text">${item.desc || 'Brak opisu.'}</div>
+                    <button class="${czyZebrany ? 'collected-btn' : 'collect-btn'}" onclick="przelaczStatusCukierka('${idPunktu}')">
+                        ${czyZebrany ? 'Oznacz jako niezebrane ✕' : 'Oznacz jako zebrane ✓'}
+                    </button>
                 </div>
             `;
 
@@ -479,9 +607,11 @@
             marker.addTo(map);
             warstwyMarkerow.push(marker);
         });
+
+        aktualizujLicznik();
     }
 
-    // Pobieranie punktów z pliku CUKIERKI.json
+    // Pobieranie danych z pliku CUKIERKI.json
     fetch('CUKIERKI.json')
         .then(response => response.json())
         .then(dane => {
@@ -508,7 +638,6 @@
         });
     };
 
-    // Celownik admina
     function stwórzCelownikX() {
         return L.divIcon({
             className: 'admin-crosshair',
