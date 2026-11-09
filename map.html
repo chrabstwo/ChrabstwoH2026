@@ -389,6 +389,24 @@
             cursor: pointer;
         }
 
+        /* --- ANIMACJA ŁADOWANIA (KROPKI) --- */
+        .loading-dots span {
+            animation: blink 1.4s infinite both;
+            height: 6px;
+            width: 6px;
+            background-color: currentColor;
+            display: inline-block;
+            border-radius: 50%;
+            margin: 0 2px;
+        }
+        .loading-dots span:nth-child(2) { animation-delay: .2s; }
+        .loading-dots span:nth-child(3) { animation-delay: .4s; }
+        @keyframes blink {
+            0% { opacity: .2; }
+            20% { opacity: 1; }
+            100% { opacity: .2; }
+        }
+
         /* --- LEAFLET POPUP I STYL ELEMENTÓW --- */
         .leaflet-popup-content-wrapper, .leaflet-popup-tip {
             background: transparent !important;
@@ -495,14 +513,14 @@
                     <div class="cloud-col-title">Ostatni zapis (lokalny)</div>
                     <div class="cloud-col-time" id="local-timestamp">-</div>
                 </div>
-                <button class="cloud-btn cloud-btn-upload" onclick="akcjaWyslijDoChmury()">Wyślij do chmury</button>
+                <button id="btn-upload-cloud" class="cloud-btn cloud-btn-upload" onclick="akcjaWyslijDoChmury()">Wyślij do chmury</button>
             </div>
             <div class="cloud-col">
                 <div>
                     <div class="cloud-col-title">Ostatni zapis w chmurze</div>
                     <div class="cloud-col-time" id="cloud-timestamp">-</div>
                 </div>
-                <button class="cloud-btn cloud-btn-download" onclick="akcjaPobierzZChmury()">Pobierz z chmury</button>
+                <button id="btn-download-cloud" class="cloud-btn cloud-btn-download" onclick="akcjaPobierzZChmury()">Pobierz z chmury</button>
             </div>
         </div>
         <button class="cloud-btn-reject" onclick="zamknijCloudModal()">Odrzuć</button>
@@ -653,6 +671,7 @@
         const lokalneDane = pobierzLokalne();
         try {
             const res = await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/read?discordId=${discordUserId}`);
+            if (!res.ok) throw new Error("Błąd sieci");
             const data = await res.json();
 
             if (!data.exists) {
@@ -704,9 +723,11 @@
         let dataChmuryStr = "-";
         try {
             const res = await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/read?discordId=${discordUserId}`);
-            const data = await res.json();
-            if (data.exists && data.updatedAt) {
-                dataChmuryStr = new Date(data.updatedAt).toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.exists && data.updatedAt) {
+                    dataChmuryStr = new Date(data.updatedAt).toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                }
             }
         } catch(e) {}
         document.getElementById("local-timestamp").innerText = pobierzCzasLokalny().toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -717,24 +738,53 @@
     window.zamknijCloudModal = function() { document.getElementById("cloud-overlay").style.display = "none"; };
     
     window.akcjaPobierzZChmury = async function() {
+        const btn = document.getElementById("btn-download-cloud");
+        const orgHtml = btn.innerHTML;
+        btn.innerHTML = 'Pobieranie <span class="loading-dots"><span></span><span></span><span></span></span>';
+        btn.disabled = true;
+
         try {
             const res = await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/read?discordId=${discordUserId}`);
-            const data = await res.json();
-            if (data.exists) {
-                zebraneElementy = data.items || [];
-                zapiszLokalne(zebraneElementy);
-                aktualizujStatusChmury(true, new Date(data.updatedAt || Date.now()));
-                odswiezMarkeryNaMapie();
+            if (res.ok) {
+                const data = await res.json();
+                if (data.exists) {
+                    zebraneElementy = data.items || [];
+                    zapiszLokalne(zebraneElementy);
+                    aktualizujStatusChmury(true, new Date(data.updatedAt || Date.now()));
+                    odswiezMarkeryNaMapie();
+                    document.getElementById("cloud-overlay").style.display = "none";
+                } else {
+                    alert("Brak zapisu w chmurze dla tego konta.");
+                }
+            } else {
+                alert("Błąd połączenia z chmurą.");
             }
-        } catch(e) {}
-        document.getElementById("cloud-overlay").style.display = "none";
+        } catch(e) {
+            alert("Błąd sieci. Sprawdź połączenie.");
+        } finally {
+            btn.innerHTML = orgHtml;
+            btn.disabled = false;
+        }
     };
 
     window.akcjaWyslijDoChmury = async function() {
+        const btn = document.getElementById("btn-upload-cloud");
+        const orgHtml = btn.innerHTML;
+        btn.innerHTML = 'Wysyłanie <span class="loading-dots"><span></span><span></span><span></span></span>';
+        btn.disabled = true;
+
         const lokalneDane = pobierzLokalne();
-        await wyslijDoChmury(lokalneDane, true);
-        zebraneElementy = lokalneDane;
-        document.getElementById("cloud-overlay").style.display = "none";
+        const success = await wyslijDoChmury(lokalneDane, true);
+        
+        btn.innerHTML = orgHtml;
+        btn.disabled = false;
+
+        if (success) {
+            zebraneElementy = lokalneDane;
+            document.getElementById("cloud-overlay").style.display = "none";
+        } else {
+            alert("Nie udało się wysłać danych do chmury. Spróbuj ponownie.");
+        }
     };
 
     async function wyslijDoChmury(items, migracja = false) {
@@ -748,11 +798,14 @@
             if (response.ok) {
                 localStorage.setItem(localMetaKey, new Date().toISOString());
                 aktualizujStatusChmury(true, new Date());
+                return true;
             } else {
                 aktualizujStatusChmury(false, null, "Błąd zapisu w chmurze");
+                return false;
             }
         } catch(e) {
             aktualizujStatusChmury(false, null, "Tryb offline");
+            return false;
         }
     }
 
@@ -894,7 +947,6 @@
         map.closePopup();
 
         try {
-            await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/read`, { method: 'GET' });
             if (akcjaTyp !== 'niemam') {
                 await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/write`, {
                     method: 'POST',
