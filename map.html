@@ -302,7 +302,7 @@
         .cloud-columns-row {
             display: flex;
             gap: 12px;
-            margin-bottom: 16px;
+            margin-bottom: 14px;
         }
         .cloud-col {
             flex: 1;
@@ -326,6 +326,13 @@
             color: #f8fafc;
             margin-bottom: 12px;
             font-weight: 600;
+        }
+
+        .cloud-prompt-label {
+            font-size: 13px;
+            color: #cbd5e1;
+            margin-bottom: 12px;
+            display: block;
         }
 
         .cloud-btn {
@@ -492,7 +499,7 @@
             </div>
         </div>
         <div class="cloud-desc" id="cloud-modal-desc">
-            Dane zapisane w chmurze różnią się od Twojego lokalnego stanu w przeglądarce (np. używałeś mapy podczas braku połączenia). Wybierz źródło, które chcesz zachować:
+            Dane zapisane w chmurze różnią się od Twojego lokalnego stanu w przeglądarce (np. używałeś mapy podczas braku połączenia).
         </div>
         
         <div class="cloud-columns-row">
@@ -512,6 +519,7 @@
             </div>
         </div>
 
+        <span class="cloud-prompt-label">Wybierz źródło, które chcesz zachować:</span>
         <button class="cloud-btn-reject" onclick="zamknijCloudModal()">Odrzuć</button>
     </div>
 </div>
@@ -640,16 +648,35 @@
         odswiezMarkeryNaMapie();
     });
 
-    // --- LOGIKA STEAM CLOUD / KV SYNC ---
+    // --- LOGIKA STEAM CLOUD / KV SYNC Z UWZGLĘDNIENIEM STARYCH KLUCZY ---
     const localKey = `chrabstwo_zebrane_${EVENT_NAME}`;
     const localMetaKey = `chrabstwo_meta_${EVENT_NAME}`;
 
+    // Kompatybilność ze starymi kluczami (jeśli użytkownik miał zapisane pod dynie2026 / cukierki2026 lub ogólnym)
     function pobierzLokalne() {
-        return JSON.parse(localStorage.getItem(localKey) || "[]");
+        let items = JSON.parse(localStorage.getItem(localKey));
+        if (!items) {
+            // Sprawdź stare klucze jako fallback
+            if (EVENT_NAME === 'dynie2026') {
+                items = JSON.parse(localStorage.getItem('chrabstwo_zebrane_dynie_dynie2026') || localStorage.getItem('chrabstwo_zebrane_dynie') || "[]");
+            } else if (EVENT_NAME === 'cukierki2026') {
+                items = JSON.parse(localStorage.getItem('chrabstwo_zebrane_dynie_cukierki2026') || "[]");
+            } else {
+                items = [];
+            }
+            // Zapisz od razu pod nowym kluczem, aby uniknąć problemów
+            if (items.length > 0) {
+                localStorage.setItem(localKey, JSON.stringify(items));
+            }
+        }
+        return items;
     }
 
     function pobierzCzasLokalny() {
-        return localStorage.getItem(localMetaKey) ? new Date(localStorage.getItem(localMetaKey)) : new Date();
+        const meta = localStorage.getItem(localMetaKey);
+        if (meta) return new Date(meta);
+        // Jeśli brak dokładnej metadane, zwracamy np. czas ostatniej modyfikacji dokumentu lub obecny jako ostateczność
+        return new Date(document.lastModified || Date.now());
     }
 
     function zapiszLokalne(items) {
@@ -666,7 +693,6 @@
             const data = await res.json();
 
             if (!data.exists) {
-                // Brak zapisu w chmurze -> cichy zapis początkowy
                 await wyslijDoChmury(lokalneDane, true);
                 aktualizujStatusChmury(true, new Date());
                 zebraneDynie = lokalneDane;
@@ -683,7 +709,6 @@
                     zebraneDynie = lokalneDane;
                     aktualizujStatusChmury(true, chmuraData);
                 } else {
-                    // Rozbieżność w tle – ustawiamy status ostrzegawczy na lewym panelu
                     zebraneDynie = lokalneDane;
                     aktualizujStatusChmury(false, null, "Niezsynchronizowane zmiany");
                 }
