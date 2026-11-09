@@ -1,536 +1,1167 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chrabstwo 4Life - Mapa Eventowa</title>
+    
+    <script>
+        if (!window.location.search.includes('event=')) {
+            window.location.replace('map.html?event=dynie2026&json=dynie26.json');
+        }
+
+        const discordUserId = localStorage.getItem("discord_user_id");
+        const wygasniecie = localStorage.getItem("login_wygasa");
+        const teraz = new Date().getTime();
+
+        if (!discordUserId || !wygasniecie || teraz >= parseInt(wygasniecie)) {
+            localStorage.removeItem("discord_user_id");
+            localStorage.removeItem("discord_access_token");
+            localStorage.removeItem("login_wygasa");
+            window.location.href = "login.html";
+        }
+
+        if (performance.navigation.type === 1 || performance.getEntriesByType("navigation")[0]?.type === "reload") {
+            const jsonFileCheck = new URLSearchParams(window.location.search).get('json') || 'dynie26.json';
+            localStorage.removeItem(`chrabstwo_modyfikacje_${jsonFileCheck}`);
+        }
+    </script>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: #0b0e14;
+            overflow: hidden;
+        }
+        
+        #counter-box {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e222d;
+            border: 1px solid #2a2e3d;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+            z-index: 1000;
+            font-family: sans-serif;
+            color: #e2e8f0;
+            padding: 10px 20px;
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        #counter-box span {
+            color: #00b894;
+        }
+
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .sidebar-header h2 {
+            font-size: 15px;
+            margin: 0;
+            color: #00b894;
+            font-weight: 600;
+        }
+        .window-controls {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .win-btn {
+            background: #141720;
+            border: 1px solid #2a2e3d;
+            color: #cbd5e1;
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.2s ease;
+            padding: 0;
+        }
+        .win-btn:hover {
+            background: #2a2e3d;
+            color: white;
+            border-color: #00b894;
+        }
+        .win-btn.logout-btn:hover {
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+
+        #sidebar {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 280px;
+            background: #1e222d;
+            border: 1px solid #2a2e3d;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+            z-index: 1000;
+            font-family: sans-serif;
+            color: #e2e8f0;
+            padding: 16px;
+            box-sizing: border-box;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: bottom left;
+            overflow: hidden;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        #sidebar.minimized {
+            width: 220px;
+            height: 48px;
+            padding: 8px 12px;
+            background: #1e222d;
+            border-color: #00b894;
+            box-shadow: 0 4px 16px rgba(0,184,148,0.2);
+            cursor: pointer;
+            overflow: hidden;
+        }
+        #sidebar.minimized .menu-section {
+            display: none !important;
+        }
+        #sidebar.minimized .sidebar-header {
+            margin-bottom: 0;
+            height: 100%;
+        }
+        #sidebar.minimized .sidebar-header h2 {
+            font-size: 13px;
+            color: #00b894;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .menu-section {
+            margin-bottom: 14px;
+            border-bottom: 1px solid #2a2e3d;
+            padding-bottom: 12px;
+        }
+        .menu-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .menu-section h4 {
+            font-size: 12px;
+            color: #94a3b8;
+            margin: 0 0 8px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .event-btn {
+            display: block;
+            width: 100%;
+            padding: 8px;
+            background: #141720;
+            border: 1px solid #2a2e3d;
+            color: white;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            text-align: center;
+            text-decoration: none;
+            box-sizing: border-box;
+            margin-bottom: 8px;
+        }
+        .event-btn:hover { 
+            background: #1e222d; 
+            border-color: #00b894; 
+        }
+        .event-btn.active {
+            background: #141720;
+            color: #00b894;
+            border-color: #00b894;
+        }
+
+        .admin-box input, .admin-box textarea, .admin-box select {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px 10px;
+            margin-bottom: 8px;
+            background: #141720;
+            border: 1px solid #2a2e3d;
+            color: white;
+            border-radius: 6px;
+            font-size: 13px;
+            outline: none;
+            font-family: sans-serif;
+        }
+        .admin-box input:focus, .admin-box textarea:focus {
+            border-color: #00b894;
+        }
+        .admin-box button, .user-action-btn {
+            width: 100%;
+            padding: 8px;
+            background: #00b894;
+            border: none;
+            color: white;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .admin-box button:hover, .user-action-btn:hover { background: #019875; }
+        .admin-status {
+            font-size: 12px;
+            margin-top: 6px;
+            text-align: center;
+        }
+
+        .changes-cart {
+            background: #141720;
+            border: 1px solid #2a2e3d;
+            border-radius: 6px;
+            padding: 8px;
+            margin-top: 8px;
+            font-size: 11px;
+            max-height: 140px;
+            overflow-y: auto;
+            color: #cbd5e1;
+        }
+        .change-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0;
+            border-bottom: 1px solid #2a2e3d;
+        }
+        .change-item:last-child { border-bottom: none; }
+
+        /* --- MODAL CLOUD SYNC --- */
+        #cloud-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 99999;
+            justify-content: center;
+            align-items: center;
+            font-family: sans-serif;
+        }
+        .cloud-modal {
+            background: #1e222d;
+            border: 1px solid #2a2e3d;
+            border-radius: 12px;
+            padding: 24px;
+            width: 440px;
+            box-shadow: 0 12px 36px rgba(0,0,0,0.8);
+            color: #e2e8f0;
+            position: relative;
+        }
+        .cloud-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .cloud-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+            margin: 0;
+        }
+        .tooltip-container {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+        }
+        .tooltip-icon {
+            width: 22px; height: 22px;
+            background: #334155;
+            color: #94a3b8;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: bold;
+            border: 1px solid #475569;
+        }
+        .tooltip-text {
+            visibility: hidden;
+            width: 260px;
+            background: #0f172a;
+            color: #cbd5e1;
+            text-align: left;
+            border-radius: 6px;
+            padding: 8px 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 130%;
+            right: 0;
+            font-size: 11px;
+            line-height: 1.4;
+            border: 1px solid #334155;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .tooltip-container:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        .cloud-desc {
+            font-size: 13px;
+            color: #94a3b8;
+            margin-bottom: 14px;
+            line-height: 1.4;
+        }
+        .cloud-prompt-label {
+            font-size: 13px;
+            color: #cbd5e1;
+            margin-bottom: 12px;
+            display: block;
+            font-weight: 500;
+        }
+        .cloud-columns-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .cloud-col {
+            flex: 1;
+            background: #141720;
+            border: 1px solid #2a2e3d;
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .cloud-col-title {
+            font-size: 11px;
+            font-weight: bold;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .cloud-col-time {
+            font-size: 12px;
+            color: #f8fafc;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+        .cloud-btn {
+            width: 100%;
+            padding: 9px;
+            border: none;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            text-align: center;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        .cloud-btn-download { background: #5865F2; color: white; }
+        .cloud-btn-upload { background: #334155; color: #cbd5e1; border: 1px solid #475569; }
+        .cloud-btn-reject {
+            width: 100%;
+            padding: 8px;
+            background: #141720;
+            border: 1px solid #2a2e3d;
+            color: #94a3b8;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .cloud-status-box {
+            font-size: 11px;
+            padding: 8px;
+            background: #141720;
+            border-radius: 6px;
+            border: 1px solid #2a2e3d;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        /* --- ANIMACJA ŁADOWANIA (KROPKI) --- */
+        .loading-dots {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            margin-left: 2px;
+        }
+        .loading-dots span {
+            animation: blink 1.4s infinite both;
+            height: 5px;
+            width: 5px;
+            background-color: currentColor;
+            display: inline-block;
+            border-radius: 50%;
+        }
+        .loading-dots span:nth-child(2) { animation-delay: .2s; }
+        .loading-dots span:nth-child(3) { animation-delay: .4s; }
+        @keyframes blink {
+            0% { opacity: .2; }
+            20% { opacity: 1; }
+            100% { opacity: .2; }
+        }
+
+        /* --- LEAFLET POPUP I STYL ELEMENTÓW --- */
+        .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+            background: transparent !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+        }
+        .leaflet-popup-content { margin: 0 !important; line-height: normal !important; }
+        .leaflet-container a.leaflet-popup-close-button { display: none !important; }
+
+        .popup-box {
+            font-family: sans-serif;
+            color: #e2e8f0;
+            background: #1e222d;
+            padding: 14px;
+            border-radius: 10px;
+            width: 240px;
+            border: 1px solid #2a2e3d;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.7);
+        }
+        .popup-box input, .popup-box textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 7px 10px;
+            margin: 4px 0 10px 0;
+            background: #141720;
+            border: 1px solid #2a2e3d;
+            color: white;
+            border-radius: 6px;
+            font-size: 12px;
+            outline: none;
+        }
+        .popup-box input:focus, .popup-box textarea:focus { border-color: #00b894; }
+        .popup-img {
+            max-width: 100%;
+            border-radius: 6px;
+            margin: 8px 0;
+            display: block;
+            border: 1px solid #2a2e3d;
+            cursor: pointer;
+        }
+        .collected-btn {
+            width: 100%;
+            padding: 8px;
+            background: #00b894;
+            border: none;
+            color: white;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 6px;
+            text-align: center;
+        }
+        .collected-btn.uncollect { background: #ef4444; }
+        .collected-btn.grey-btn { background: #334155; color: #cbd5e1; border: 1px solid #475569; }
+        .collected-btn.grey-btn:hover { background: #475569; }
+
+        .marker-zebrany-cukierki {
+            opacity: 0.25;
+            filter: grayscale(100%);
+            transition: opacity 0.3s;
+        }
+        .marker-zebrany-dynie {
+            opacity: 1.0;
+            transition: opacity 0.3s;
+        }
+
+        #image-modal {
+            display: none;
+            position: fixed;
+            z-index: 99999;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            justify-content: center; align-items: center;
+            cursor: pointer;
+        }
+        #image-modal img {
+            max-width: 90%; max-height: 90%; border-radius: 8px; border: 2px solid #2a2e3d;
+        }
+    </style>
+</head>
+<body>
+
+<div id="counter-box">
+    <span id="counter-label">Zebranych znajdziek:</span> <span id="collected-count">0</span>/<span id="total-count">0</span>
+</div>
+
+<div id="cloud-overlay">
+    <div class="cloud-modal">
+        <div class="cloud-header">
+            <h3 class="cloud-title">Konflikt danych z chmurą</h3>
+            <div class="tooltip-container">
+                <div class="tooltip-icon">?</div>
+                <div class="tooltip-text">Migracja i zapis w chmurze pozwala na zachowanie postępów znajdziek na koncie Discord.</div>
+            </div>
+        </div>
+        <div class="cloud-desc">
+            Dane zapisane w chmurze różnią się od Twojego lokalnego stanu w przeglądarce.
+        </div>
+        <span class="cloud-prompt-label">Wybierz źródło, które chcesz zachować:</span>
+        <div class="cloud-columns-row">
+            <div class="cloud-col">
+                <div>
+                    <div class="cloud-col-title">Ostatni zapis (lokalny)</div>
+                    <div class="cloud-col-time" id="local-timestamp">-</div>
+                </div>
+                <button id="btn-upload-cloud" class="cloud-btn cloud-btn-upload" onclick="akcjaWyslijDoChmury()">Wyślij do chmury</button>
+            </div>
+            <div class="cloud-col">
+                <div>
+                    <div class="cloud-col-title">Ostatni zapis w chmurze</div>
+                    <div class="cloud-col-time" id="cloud-timestamp">-</div>
+                </div>
+                <button id="btn-download-cloud" class="cloud-btn cloud-btn-download" onclick="akcjaPobierzZChmury()">Pobierz z chmury</button>
+            </div>
+        </div>
+        <button class="cloud-btn-reject" onclick="zamknijCloudModal()">Odrzuć</button>
+    </div>
+</div>
+
+<div id="image-modal" onclick="zamknijZdjecie()">
+    <img id="modal-img" src="" alt="Powiększony screen">
+</div>
+
+<div id="sidebar" onclick="rozwinJesliZminimalizowany(event)">
+    <div class="sidebar-header">
+        <h2>Chrabstwo 4Life</h2>
+        <div class="window-controls">
+            <button class="win-btn" onclick="przelaczMinimalizacje(event)" title="Zminimalizuj">_</button>
+            <button class="win-btn logout-btn" onclick="wylogujSie(event)" title="Wyloguj się">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+            </button>
+        </div>
+    </div>
+    
+    <div class="menu-section">
+        <h4 id="progress-header-title">Postęp znajdziek</h4>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; margin-bottom: 10px; color: #cbd5e1;">
+            <input type="checkbox" id="hide-collected-chk" style="accent-color: #00b894; width: 16px; height: 16px; cursor: pointer;">
+            <span id="hide-collected-label">Ukryj zebrane</span>
+        </label>
+        <button id="reset-progress-btn" class="user-action-btn" style="background: #334155; font-size: 12px;">Zresetuj lokacje</button>
+    </div>
+
+    <div class="menu-section">
+        <h4>Wybierz event</h4>
+        <a href="map.html?event=dynie2026&json=dynie26.json" class="event-btn" id="btn-dynie2026">🎃 Dynie Halloween 2026</a>
+        <a href="map.html?event=cukierki2026&json=cukierki26.json" class="event-btn" id="btn-cukierki2026">🍬 Cukierki (NPC) 2026</a>
+        <a href="fabula.html" class="event-btn" style="text-decoration: none;">📖 Fabuła Halloween 2026</a>
+    </div>
+
+    <div class="menu-section">
+        <h4>Chmura</h4>
+        <div id="cloud-status-indicator" class="cloud-status-box" onclick="otworzRecznaSynchronizacje()">
+            Sprawdzanie stanu...
+        </div>
+    </div>
+
+    <div class="menu-section admin-box">
+        <h4>Panel Administratora</h4>
+        <div id="admin-login-view">
+            <input type="password" id="admin-pass" placeholder="Hasło admina">
+            <button id="admin-login-btn">Zaloguj</button>
+            <div id="admin-err" class="admin-status" style="color: #ff5252; display: none;">Błędne hasło!</div>
+        </div>
+        <div id="admin-logged-view" style="display: none;">
+            <div class="admin-status" style="color: #00b894; font-weight: bold; margin-bottom: 6px;">✓ Tryb edycji/dodawania aktywny</div>
+            <button id="admin-logout-btn" style="background: #ef4444; margin-bottom: 8px;">Zablokuj panel</button>
+            
+            <div style="font-size: 11px; color: #94a3b8; margin-bottom: 4px;">Koszyk zmian dla: <b id="current-json-label" style="color:#00b894;"></b></div>
+            <button onclick="kopiujCaloscJson()" style="background: #3b82f6; margin-bottom: 6px;">Kopiuj całą tablicę JSON</button>
+            <div id="cart-items" class="changes-cart">Brak lokalnych zmian.</div>
+        </div>
+    </div>
+
+    <div class="menu-section" style="font-size: 10px; color: #64748b; line-height: 1.3; text-align: justify; border-bottom: none; margin-bottom: 0; padding-bottom: 0;">
+        <b>Nota informacyjna:</b> Narzędzie wyłącznie do użytku wewnętrznego organizacji Chrabstwo. Mapa ma charakter pomocniczy, zakaz handlu i dystrybucji komercyjnej. Autor projektu nie ponosi żadnej odpowiedzialności za dalsze udostępnianie mapy osobom trzecim. Zgodnie z wytycznymi serwera.
+    </div>
+</div>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    if (!window.location.search.includes('event=')) {
-        window.location.replace('map.html?event=dynie2026&json=dynie26.json');
+    const WORKER_URL = "https://patient-star-01ba.frebcraft17.workers.dev";
+    const urlParams = new URLSearchParams(window.location.search);
+    const EVENT_NAME = urlParams.get('event') || 'dynie2026';
+    const JSON_FILE = urlParams.get('json') || 'dynie26.json';
+
+    const isCukierki = EVENT_NAME.includes('cukierki') || JSON_FILE.includes('cukierki');
+    if (isCukierki) {
+        document.getElementById('counter-label').innerText = 'Odwiedzonych NPC:';
+        document.getElementById('progress-header-title').innerText = 'Postęp NPC';
+        document.getElementById('hide-collected-label').innerText = 'Ukryj odwiedzonych';
     }
 
-    const discordUserId = localStorage.getItem("discord_user_id");
-    const wygasniecie = localStorage.getItem("login_wygasa");
-    const teraz = new Date().getTime();
+    const activeBtn = document.getElementById(`btn-${EVENT_NAME}`);
+    if (activeBtn) activeBtn.classList.add('active');
+    document.getElementById('current-json-label').innerText = JSON_FILE;
 
-    if (!discordUserId || !wygasniecie || teraz >= parseInt(wygasniecie)) {
-        localStorage.removeItem("discord_user_id");
-        localStorage.removeItem("discord_access_token");
-        localStorage.removeItem("login_wygasa");
-        window.location.href = "login.html";
+    const sidebar = document.getElementById("sidebar");
+    function przelaczMinimalizacje(event) {
+        event.stopPropagation();
+        sidebar.classList.toggle("minimized");
+        localStorage.setItem("sidebar_minimized", sidebar.classList.contains("minimized"));
+    }
+    function rozwinJesliZminimalizowany(event) {
+        if (sidebar.classList.contains("minimized")) {
+            sidebar.classList.remove("minimized");
+            localStorage.setItem("sidebar_minimized", "false");
+        }
+    }
+    function wylogujSie(event) {
+        event.stopPropagation();
+        if (confirm("Czy na pewno chcesz się wylogować?")) {
+            localStorage.removeItem("discord_user_id");
+            localStorage.removeItem("discord_access_token");
+            localStorage.removeItem("login_wygasa");
+            sessionStorage.removeItem("admin_zalogowany");
+            window.location.href = "login.html";
+        }
+    }
+    if (localStorage.getItem("sidebar_minimized") === "true") sidebar.classList.add("minimized");
+
+    const HASLO_ADMINA = "admin2026";
+    let czyAdmin = sessionStorage.getItem("admin_zalogowany") === "true";
+    let zebraneElementy = [];
+    let statusNieMam = JSON.parse(localStorage.getItem(`chrabstwo_niemam_${EVENT_NAME}`) || "{}");
+    let ukryjZebrane = localStorage.getItem(`chrabstwo_ukryj_zebrane_${EVENT_NAME}`) === "true";
+
+    const hideCollectedChk = document.getElementById("hide-collected-chk");
+    hideCollectedChk.checked = ukryjZebrane;
+    hideCollectedChk.addEventListener("change", (e) => {
+        ukryjZebrane = e.target.checked;
+        localStorage.setItem(`chrabstwo_ukryj_zebrane_${EVENT_NAME}`, ukryjZebrane);
+        odswiezMarkeryNaMapie();
+    });
+
+    const localKey = `chrabstwo_zebrane_${EVENT_NAME}`;
+    const localMetaKey = `chrabstwo_meta_${EVENT_NAME}`;
+    const localModKey = `chrabstwo_modyfikacje_${JSON_FILE}`;
+
+    let modyfikowaneElementy = JSON.parse(localStorage.getItem(localModKey) || "{}");
+
+    function pobierzLokalne() {
+        return JSON.parse(localStorage.getItem(localKey) || "[]");
+    }
+    function pobierzCzasLokalny() {
+        const meta = localStorage.getItem(localMetaKey);
+        return meta ? new Date(meta) : new Date(document.lastModified || Date.now());
+    }
+    function zapiszLokalne(items) {
+        localStorage.setItem(localKey, JSON.stringify(items));
+        localStorage.setItem(localMetaKey, new Date().toISOString());
     }
 
-    if (performance.navigation.type === 1 || performance.getEntriesByType("navigation")[0]?.type === "reload") {
-        const jsonFileCheck = new URLSearchParams(window.location.search).get('json') || 'dynie26.json';
-        localStorage.removeItem(`chrabstwo_modyfikacje_${jsonFileCheck}`);
+    async function sprawdzSynchronizacje() {
+        const lokalneDane = pobierzLokalne();
+        try {
+            const res = await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/read?discordId=${discordUserId}`);
+            if (!res.ok) throw new Error("Błąd sieci");
+            const data = await res.json();
+
+            if (!data.exists) {
+                await wyslijDoChmury(lokalneDane, true);
+                zebraneElementy = lokalneDane;
+                uruchomMapę();
+            } else {
+                const chmuraDane = data.items || [];
+                const chmuraData = data.updatedAt ? new Date(data.updatedAt) : new Date();
+                
+                const setLok = new Set(lokalneDane);
+                const setChm = new Set(chmuraDane);
+                const identyczne = setLok.size === setChm.size && [...setLok].every(id => setChm.has(id));
+
+                if (identyczne) {
+                    zebraneElementy = lokalneDane;
+                    aktualizujStatusChmury(true, chmuraData);
+                } else {
+                    zebraneElementy = lokalneDane;
+                    aktualizujStatusChmury(false, chmuraData, "Konflikt / Niezsynchronizowane");
+                }
+                uruchomMapę();
+            }
+        } catch (e) {
+            zebraneElementy = lokalneDane;
+            aktualizujStatusChmury(false, null, "Tryb offline");
+            uruchomMapę();
+        }
     }
+
+    function aktualizujStatusChmury(zsynchronizowano, data, customText = null) {
+        const indicator = document.getElementById("cloud-status-indicator");
+        if (customText) {
+            indicator.style.color = "#f59e0b";
+            indicator.innerHTML = `⚠️ ${customText}<br><span style="color:#64748b; font-size:10px;">Kliknij, aby rozwiązać</span>`;
+            return;
+        }
+        if (zsynchronizowano && data) {
+            const dataStr = data.toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            indicator.style.color = "#00b894";
+            indicator.innerHTML = `✓ Zsynchronizowano z chmurą<br><span style="color:#64748b; font-size:10px;">z dnia ${dataStr}</span>`;
+        } else {
+            indicator.style.color = "#f59e0b";
+            indicator.innerHTML = `⚠️ Niezsynchronizowane zmiany<br><span style="color:#64748b; font-size:10px;">Kliknij, aby zarządzać</span>`;
+        }
+    }
+
+    window.otworzRecznaSynchronizacje = async function() {
+        let dataChmuryStr = "-";
+        try {
+            const res = await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/read?discordId=${discordUserId}`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.exists && data.updatedAt) {
+                    dataChmuryStr = new Date(data.updatedAt).toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                }
+            }
+        } catch(e) {}
+        document.getElementById("local-timestamp").innerText = pobierzCzasLokalny().toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        document.getElementById("cloud-timestamp").innerText = dataChmuryStr;
+        document.getElementById("cloud-overlay").style.display = "flex";
+    };
+
+    window.zamknijCloudModal = function() { document.getElementById("cloud-overlay").style.display = "none"; };
+    
+    window.akcjaPobierzZChmury = async function() {
+        const btn = document.getElementById("btn-download-cloud");
+        const orgHtml = btn.innerHTML;
+        btn.innerHTML = 'Pobieranie<span class="loading-dots"><span></span><span></span><span></span></span>';
+        btn.disabled = true;
+
+        try {
+            const res = await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/read?discordId=${discordUserId}`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.exists) {
+                    zebraneElementy = data.items || [];
+                    zapiszLokalne(zebraneElementy);
+                    aktualizujStatusChmury(true, new Date(data.updatedAt || Date.now()));
+                    odswiezMarkeryNaMapie();
+                    document.getElementById("cloud-overlay").style.display = "none";
+                } else {
+                    alert("Brak zapisu w chmurze dla tego konta.");
+                }
+            } else {
+                alert("Błąd połączenia z chmurą.");
+            }
+        } catch(e) {
+            alert("Błąd sieci. Sprawdź połączenie.");
+        } finally {
+            btn.innerHTML = orgHtml;
+            btn.disabled = false;
+        }
+    };
+
+    window.akcjaWyslijDoChmury = async function() {
+        const btn = document.getElementById("btn-upload-cloud");
+        const orgHtml = btn.innerHTML;
+        btn.innerHTML = 'Wysyłanie<span class="loading-dots"><span></span><span></span><span></span></span>';
+        btn.disabled = true;
+
+        const lokalneDane = pobierzLokalne();
+        const success = await wyslijDoChmury(lokalneDane, true);
+        
+        btn.innerHTML = orgHtml;
+        btn.disabled = false;
+
+        if (success) {
+            zebraneElementy = lokalneDane;
+            document.getElementById("cloud-overlay").style.display = "none";
+        } else {
+            alert("Nie udało się wysłać danych do chmury. Sprawdź połączenie z internetem.");
+        }
+    };
+
+    async function wyslijDoChmury(items, migracja = false) {
+        const endpoint = migracja ? `${WORKER_URL}/members/event/${EVENT_NAME}/migrate` : `${WORKER_URL}/members/event/${EVENT_NAME}/write`;
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ discordId: discordUserId, items, updatedAt: new Date().toISOString() })
+            });
+            if (response.ok) {
+                localStorage.setItem(localMetaKey, new Date().toISOString());
+                aktualizujStatusChmury(true, new Date());
+                return true;
+            } else {
+                aktualizujStatusChmury(false, null, "Błąd zapisu w chmurze");
+                return false;
+            }
+        } catch(e) {
+            aktualizujStatusChmury(false, null, "Tryb offline");
+            return false;
+        }
+    }
+
+    document.getElementById("reset-progress-btn").addEventListener("click", async () => {
+        if (confirm("Czy na pewno chcesz zresetować postęp w tym evencie?")) {
+            zebraneElementy = [];
+            statusNieMam = {};
+            localStorage.removeItem(`chrabstwo_niemam_${EVENT_NAME}`);
+            zapiszLokalne([]);
+            try {
+                await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/reset`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ discordId: discordUserId })
+                });
+                aktualizujStatusChmury(true, new Date());
+            } catch(e) {
+                aktualizujStatusChmury(false, null, "Tryb offline");
+            }
+            odswiezMarkeryNaMapie();
+        }
+    });
+
+    const adminLoginView = document.getElementById("admin-login-view");
+    const adminLoggedView = document.getElementById("admin-logged-view");
+    function odswiezPanelAdmina() {
+        if (czyAdmin) {
+            adminLoginView.style.display = "none";
+            adminLoggedView.style.display = "block";
+            odswiezKoszykZmian();
+        } else {
+            adminLoginView.style.display = "block";
+            adminLoggedView.style.display = "none";
+        }
+    }
+    odswiezPanelAdmina();
+
+    document.getElementById("admin-login-btn").addEventListener("click", () => {
+        if (document.getElementById("admin-pass").value === HASLO_ADMINA) {
+            czyAdmin = true;
+            sessionStorage.setItem("admin_zalogowany", "true");
+            document.getElementById("admin-err").style.display = "none";
+            document.getElementById("admin-pass").value = "";
+            odswiezPanelAdmina();
+        } else {
+            document.getElementById("admin-err").style.display = "block";
+        }
+    });
+
+    document.getElementById("admin-logout-btn").addEventListener("click", () => {
+        czyAdmin = false;
+        sessionStorage.removeItem("admin_zalogowany");
+        odswiezPanelAdmina();
+    });
+
+    const imageBounds = [[0, 0], [2048, 2048]];
+    const cameraBounds = [[-300, -300], [2348, 2348]];
+    const map = L.map('map', { crs: L.CRS.Simple, minZoom: -1, maxZoom: 3, maxBounds: cameraBounds, maxBoundsViscosity: 0.7 });
+    L.imageOverlay('map_hq.jpg', imageBounds).addTo(map);
+    map.fitBounds(imageBounds);
+
+    let wszystkieElementyDane = [];
+    let warstwyMarkerow = [];
+    let tymczasowyCelownik = null;
+
+    window.pokazZdjecie = (url) => {
+        document.getElementById("modal-img").src = url;
+        document.getElementById("image-modal").style.display = "flex";
+    };
+    window.zamknijZdjecie = () => { document.getElementById("image-modal").style.display = "none"; };
+
+    function stwórzIkonę(jestZebrana, jestZmodyfikowany, czyNieMam) {
+        let kolor = jestZebrana ? "#00b894" : "#ff5252";
+        if (isCukierki) {
+            if (czyNieMam) {
+                kolor = "#6b7280"; 
+            } else {
+                kolor = jestZebrana ? "#00b894" : "#ff5252"; 
+            }
+        }
+        if (jestZmodyfikowany) kolor = "#3b82f6";
+
+        const pinSvg = `
+            <svg width="30" height="42" viewBox="0 0 384 512" xmlns="http://www.w3.org/2000/svg">
+                <path fill="${kolor}" stroke="#ffffff" stroke-width="20" d="M172.268 501.67C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0zM192 272c44.183 0 80-35.817 80-80s-35.817-80-80-80-80 35.817-80 80 35.817 80 80 80z"/>
+            </svg>
+        `;
+        let klasaIkony = "custom-google-pin";
+        if (isCukierki && czyNieMam) {
+            klasaIkony += " marker-zebrany-cukierki";
+        } else if (jestZebrana) {
+            klasaIkony += isCukierki ? "" : " marker-zebrany-dynie";
+        }
+        return L.divIcon({ className: klasaIkony, html: pinSvg, iconSize: [30, 42], iconAnchor: [15, 42], popupAnchor: [0, -38] });
+    }
+
+    function aktualizujLicznik() {
+        document.getElementById("collected-count").innerText = zebraneElementy.length;
+        document.getElementById("total-count").innerText = wszystkieElementyDane.length;
+    }
+
+    window.przelaczStanPunktu = async function(id, akcjaTyp) {
+        const strId = String(id);
+        const index = zebraneElementy.indexOf(strId);
+        let apiAkcja = "add";
+
+        if (akcjaTyp === 'niemam') {
+            statusNieMam[strId] = !statusNieMam[strId];
+            if (statusNieMam[strId] && index > -1) {
+                zebraneElementy.splice(index, 1);
+            }
+            localStorage.setItem(`chrabstwo_niemam_${EVENT_NAME}`, JSON.stringify(statusNieMam));
+            zapiszLokalne(zebraneElementy);
+        } else if (akcjaTyp === 'odwiedzony' || akcjaTyp === 'zebrane') {
+            statusNieMam[strId] = false;
+            localStorage.setItem(`chrabstwo_niemam_${EVENT_NAME}`, JSON.stringify(statusNieMam));
+            
+            if (index > -1) {
+                zebraneElementy.splice(index, 1);
+                apiAkcja = "remove";
+            } else {
+                zebraneElementy.push(strId);
+                apiAkcja = "add";
+            }
+            zapiszLokalne(zebraneElementy);
+        } else if (akcjaTyp === 'niezebrane') {
+            statusNieMam[strId] = false;
+            localStorage.setItem(`chrabstwo_niemam_${EVENT_NAME}`, JSON.stringify(statusNieMam));
+            
+            if (index > -1) {
+                zebraneElementy.splice(index, 1);
+                apiAkcja = "remove";
+            }
+            zapiszLokalne(zebraneElementy);
+        }
+
+        aktualizujLicznik();
+        odswiezMarkeryNaMapie();
+        map.closePopup();
+
+        try {
+            if (akcjaTyp !== 'niemam') {
+                await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/write`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ discordId: discordUserId, itemId: strId, actionType: apiAkcja, updatedAt: new Date().toISOString() })
+                });
+            }
+            aktualizujStatusChmury(true, new Date());
+        } catch(e) {
+            aktualizujStatusChmury(false, null, "Tryb offline");
+        }
+    };
+
+    function odswiezMarkeryNaMapie() {
+        warstwyMarkerow.forEach(m => map.removeLayer(m));
+        warstwyMarkerow = [];
+
+        wszystkieElementyDane.forEach((item, index) => {
+            const idVal = item.id || (index + 1);
+            const strId = String(idVal);
+            const jestZebrana = zebraneElementy.includes(strId);
+            const czyNieMam = !!statusNieMam[strId];
+            const jestZmodyfikowany = !!modyfikowaneElementy[strId];
+
+            if (ukryjZebrane && (jestZebrana || czyNieMam)) return;
+
+            const marker = L.marker([item.y, item.x], { icon: stwórzIkonę(jestZebrana, jestZmodyfikowany, czyNieMam) });
+            
+            let przyciskiHtml = '';
+            if (isCukierki) {
+                if (czyNieMam) {
+                    przyciskiHtml = `
+                        <button class="collected-btn" onclick="przelaczStanPunktu('${strId}', 'odwiedzony')">✓ Odwiedzony NPC</button>
+                        <button class="collected-btn uncollect" onclick="przelaczStanPunktu('${strId}', 'niezebrane')" style="margin-top:4px;">Oznacz jako niezebrane</button>
+                    `;
+                } else if (jestZebrana) {
+                    przyciskiHtml = `
+                        <button class="collected-btn uncollect" onclick="przelaczStanPunktu('${strId}', 'niezebrane')">Oznacz jako niezebrane</button>
+                        <button class="collected-btn grey-btn" onclick="przelaczStanPunktu('${strId}', 'niemam')" style="margin-top:4px;">✕ Nie mam</button>
+                    `;
+                } else {
+                    przyciskiHtml = `
+                        <button class="collected-btn" onclick="przelaczStanPunktu('${strId}', 'odwiedzony')">✓ Odwiedzony NPC</button>
+                        <button class="collected-btn grey-btn" onclick="przelaczStanPunktu('${strId}', 'niemam')" style="margin-top:4px;">✕ Nie mam</button>
+                    `;
+                }
+            } else {
+                const btnText = jestZebrana ? "✕ Nie mam" : "✓ Zebrane";
+                const btnClass = jestZebrana ? "collected-btn uncollect" : "collected-btn";
+                przyciskiHtml = `<button class="${btnClass}" onclick="przelaczStanPunktu('${strId}', 'zebrane')">${btnText}</button>`;
+            }
+
+            const imgHtml = item.img ? `<img src="${item.img}" class="popup-img" onclick="pokazZdjecie('${item.img}')" onerror="this.style.display='none'">` : '';
+            const descHtml = item.desc ? `<div style="font-size:11px; color:#cbd5e1; margin-bottom:6px;">${item.desc}</div>` : '';
+
+            const popupContent = `
+                <div class="popup-box">
+                    <b style="font-size: 13px; color: #f8fafc;">Punkt #${idVal}</b><br>
+                    <div style="font-size: 11px; color: #94a3b8; margin: 2px 0 6px 0;">Y: <b>${item.y}</b>, X: <b>${item.x}</b></div>
+                    ${descHtml}
+                    ${imgHtml}
+                    ${przyciskiHtml}
+                </div>
+            `;
+            marker.bindPopup(popupContent);
+            marker.addTo(map);
+            warstwyMarkerow.push(marker);
+        });
+        aktualizujLicznik();
+    }
+
+    function uruchomMapę() {
+        fetch(JSON_FILE)
+            .then(res => res.json())
+            .then(data => {
+                wszystkieElementyDane = data.map(item => {
+                    const idStr = String(item.id || '');
+                    return modyfikowaneElementy[idStr] ? { ...item, ...modyfikowaneElementy[idStr] } : item;
+                });
+                odswiezMarkeryNaMapie();
+            })
+            .catch(err => console.log('Błąd ładowania JSON:', err));
+    }
+
+    function odswiezKoszykZmian() {
+        const cartEl = document.getElementById("cart-items");
+        const keys = Object.keys(modyfikowaneElementy);
+        if (keys.length === 0) {
+            cartEl.innerHTML = 'Brak lokalnych zmian.';
+            return;
+        }
+        let html = '';
+        keys.forEach(k => {
+            const isEdytowany = modyfikowaneElementy[k].isEdit ? "(edytowane)" : "";
+            html += `<div class="change-item"><span>ID: ${k} ${isEdytowany}</span><button onclick="usunZmianę('${k}')" style="background:#ef4444; width:auto; padding:2px 6px; font-size:10px;">Usuń</button></div>`;
+        });
+        cartEl.innerHTML = html;
+    }
+
+    window.usunZmianę = function(id) {
+        delete modyfikowaneElementy[id];
+        localStorage.setItem(localModKey, JSON.stringify(modyfikowaneElementy));
+        odswiezKoszykZmian();
+        location.reload();
+    };
+
+    window.kopiujCaloscJson = function() {
+        const jsonString = JSON.stringify(wszystkieElementyDane, null, 2);
+        navigator.clipboard.writeText(jsonString).then(() => {
+            alert("Skopiowano całą tablicę JSON do schowka!");
+        });
+    };
+
+    window.zapiszZmianęAdmin = function(y, x, targetId, isExisting) {
+        const idInput = document.getElementById('admin-item-id');
+        const imgInput = document.getElementById('admin-img-url');
+
+        const idVal = idInput ? idInput.value.trim() : targetId;
+        const imgVal = imgInput ? imgInput.value.trim() : "";
+
+        const existingObj = wszystkieElementyDane.find(i => String(i.id) === String(idVal)) || {};
+        const obj = { id: parseInt(idVal), y: y, x: x };
+        if (existingObj.desc) obj.desc = existingObj.desc;
+        if (imgVal) obj.img = imgVal;
+
+        const existingIdx = wszystkieElementyDane.findIndex(i => String(i.id) === String(idVal));
+        if (existingIdx > -1) {
+            wszystkieElementyDane[existingIdx] = obj;
+        } else {
+            wszystkieElementyDane.push(obj);
+        }
+
+        modyfikowaneElementy[idVal] = { ...obj, isEdit: isExisting };
+        localStorage.setItem(localModKey, JSON.stringify(modyfikowaneElementy));
+
+        odswiezKoszykZmian();
+        odswiezMarkeryNaMapie();
+        map.closePopup();
+    };
+
+    const originalOdswiezMarkery = odswiezMarkeryNaMapie;
+    odswiezMarkeryNaMapie = function() {
+        originalOdswiezMarkery();
+        if (!czyAdmin) return;
+
+        warstwyMarkerow.forEach((marker, idx) => {
+            const item = wszystkieElementyDane[idx];
+            if (!item) return;
+            const strId = String(item.id || (idx + 1));
+
+            marker.on('click', function() {
+                if (!czyAdmin) return;
+                setTimeout(() => {
+                    const popupEl = document.querySelector('.leaflet-popup-content');
+                    if (!popupEl) return;
+                    
+                    if (!document.getElementById('admin-edit-section')) {
+                        const editDiv = document.createElement('div');
+                        editDiv.id = 'admin-edit-section';
+                        editDiv.style.cssText = "border-top:1px solid #2a2e3d; margin-top:8px; padding-top:8px;";
+                        editDiv.innerHTML = `
+                            <div style="font-size:10px; color:#3b82f6; font-weight:bold; margin-bottom:4px;">TRYB ADMINA: EDYCJA</div>
+                            <label style="font-size: 10px; color: #cbd5e1;">URL obrazka (Imgur):</label>
+                            <input type="text" id="popup-img-url" value="${item.img || ''}" placeholder="https://i.imgur.com/..." style="width:100%; box-sizing:border-box; padding:5px; background:#141720; border:1px solid #2a2e3d; color:white; border-radius:4px; font-size:11px; margin-bottom:6px;">
+                            <button onclick="zapiszZmianęAdmin(${item.y}, ${item.x}, '${strId}', true)" style="width:100%; padding:6px; background:#3b82f6; border:none; color:white; font-weight:bold; border-radius:4px; cursor:pointer; font-size:11px;">Zaktualizuj Imgur</button>
+                        `;
+                        popupEl.querySelector('.popup-box').appendChild(editDiv);
+                    }
+                }, 50);
+            });
+        });
+    };
+
+    map.on('click', function(e) {
+        if (!czyAdmin) return;
+        if (e.originalEvent.target.closest('.leaflet-marker-icon')) return;
+
+        const y = Math.round(e.latlng.lat);
+        const x = Math.round(e.latlng.lng);
+        const autoId = wszystkieElementyDane.length > 0 ? Math.max(...wszystkieElementyDane.map(i => i.id || 0)) + 1 : 1;
+
+        if (tymczasowyCelownik) map.removeLayer(tymczasowyCelownik);
+        tymczasowyCelownik = L.marker([e.latlng.lat, e.latlng.lng], {
+            icon: L.divIcon({ className: 'admin-crosshair', html: '<div style="font-size:26px; color:#ff5252; text-align:center;">✕</div>', iconSize: [24,24], iconAnchor: [12,12] }),
+            interactive: false
+        }).addTo(map);
+
+        const popupContent = `
+            <div class="popup-box">
+                <div style="font-size: 11px; color: #94a3b8; margin-bottom: 4px;">Współrzędne: Y: <b>${y}</b>, X: <b>${x}</b></div>
+                <label style="font-size: 11px; color: #cbd5e1;">ID punktu (Auto):</label>
+                <input type="number" id="admin-item-id" value="${autoId}">
+                <label style="font-size: 11px; color: #cbd5e1;">URL obrazka (Imgur, opcjonalnie):</label>
+                <input type="text" id="admin-img-url" placeholder="https://i.imgur.com/...">
+                <button onclick="zapiszZmianęAdmin(${y}, ${x}, ${autoId}, false)">Dodaj punkt</button>
+            </div>
+        `;
+        L.popup().setLatLng(e.latlng).setContent(popupContent).openOn(map);
+    });
+
+    map.on('popupclose', () => {
+        if (tymczasowyCelownik) { map.removeLayer(tymczasowyCelownik); tymczasowyCelownik = null; }
+    });
+
+    sprawdzSynchronizacje();
 </script>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<style>
-    html, body, #map {
-        width: 100%;
-        height: 100%;
-        margin: 0;
-        padding: 0;
-        background-color: #0b0e14;
-        overflow: hidden;
-    }
-    
-    #counter-box {
-        position: fixed;
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: #1e222d;
-        border: 1px solid #2a2e3d;
-        border-radius: 10px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.6);
-        z-index: 1000;
-        font-family: sans-serif;
-        color: #e2e8f0;
-        padding: 10px 20px;
-        font-size: 15px;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-    }
-    #counter-box span {
-        color: #00b894;
-    }
-
-    .sidebar-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 12px;
-    }
-    .sidebar-header h2 {
-        font-size: 15px;
-        margin: 0;
-        color: #00b894;
-        font-weight: 600;
-    }
-    .window-controls {
-        display: flex;
-        gap: 6px;
-        align-items: center;
-    }
-    .win-btn {
-        background: #141720;
-        border: 1px solid #2a2e3d;
-        color: #cbd5e1;
-        width: 26px;
-        height: 26px;
-        border-radius: 6px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 14px;
-        font-weight: bold;
-        transition: all 0.2s ease;
-        padding: 0;
-    }
-    .win-btn:hover {
-        background: #2a2e3d;
-        color: white;
-        border-color: #00b894;
-    }
-    .win-btn.logout-btn:hover {
-        border-color: #ef4444;
-        color: #ef4444;
-    }
-
-    #sidebar {
-        position: fixed;
-        bottom: 20px;
-        left: 20px;
-        width: 280px;
-        background: #1e222d;
-        border: 1px solid #2a2e3d;
-        border-radius: 12px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.6);
-        z-index: 1000;
-        font-family: sans-serif;
-        color: #e2e8f0;
-        padding: 16px;
-        box-sizing: border-box;
-        transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-        transform-origin: bottom left;
-        overflow: hidden;
-        max-height: 90vh;
-        overflow-y: auto;
-    }
-    #sidebar.minimized {
-        width: 220px;
-        height: 48px;
-        padding: 8px 12px;
-        background: #1e222d;
-        border-color: #00b894;
-        box-shadow: 0 4px 16px rgba(0,184,148,0.2);
-        cursor: pointer;
-        overflow: hidden;
-    }
-    #sidebar.minimized .menu-section {
-        display: none !important;
-    }
-    #sidebar.minimized .sidebar-header {
-        margin-bottom: 0;
-        height: 100%;
-    }
-    #sidebar.minimized .sidebar-header h2 {
-        font-size: 13px;
-        color: #00b894;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .menu-section {
-        margin-bottom: 14px;
-        border-bottom: 1px solid #2a2e3d;
-        padding-bottom: 12px;
-    }
-    .menu-section:last-child {
-        border-bottom: none;
-        margin-bottom: 0;
-        padding-bottom: 0;
-    }
-    .menu-section h4 {
-        font-size: 12px;
-        color: #94a3b8;
-        margin: 0 0 8px 0;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .event-btn {
-        display: block;
-        width: 100%;
-        padding: 8px;
-        background: #141720;
-        border: 1px solid #2a2e3d;
-        color: white;
-        font-weight: bold;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 12px;
-        text-align: center;
-        text-decoration: none;
-        box-sizing: border-box;
-        margin-bottom: 8px;
-    }
-    .event-btn:hover { 
-        background: #1e222d; 
-        border-color: #00b894; 
-    }
-    .event-btn.active {
-        background: #141720;
-        color: #00b894;
-        border-color: #00b894;
-    }
-
-    .admin-box input, .admin-box textarea, .admin-box select {
-        width: 100%;
-        box-sizing: border-box;
-        padding: 8px 10px;
-        margin-bottom: 8px;
-        background: #141720;
-        border: 1px solid #2a2e3d;
-        color: white;
-        border-radius: 6px;
-        font-size: 13px;
-        outline: none;
-        font-family: sans-serif;
-    }
-    .admin-box input:focus, .admin-box textarea:focus {
-        border-color: #00b894;
-    }
-    .admin-box button, .user-action-btn {
-        width: 100%;
-        padding: 8px;
-        background: #00b894;
-        border: none;
-        color: white;
-        font-weight: bold;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 13px;
-    }
-    .admin-box button:hover, .user-action-btn:hover { background: #019875; }
-    .admin-status {
-        font-size: 12px;
-        margin-top: 6px;
-        text-align: center;
-    }
-
-    .changes-cart {
-        background: #141720;
-        border: 1px solid #2a2e3d;
-        border-radius: 6px;
-        padding: 8px;
-        margin-top: 8px;
-        font-size: 11px;
-        max-height: 140px;
-        overflow-y: auto;
-        color: #cbd5e1;
-    }
-    .change-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 5px 0;
-        border-bottom: 1px solid #2a2e3d;
-    }
-    .change-item:last-child { border-bottom: none; }
-
-    /* --- MODAL CLOUD SYNC --- */
-    #cloud-overlay {
-        display: none;
-        position: fixed;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background-color: rgba(0, 0, 0, 0.8);
-        z-index: 99999;
-        justify-content: center;
-        align-items: center;
-        font-family: sans-serif;
-    }
-    .cloud-modal {
-        background: #1e222d;
-        border: 1px solid #2a2e3d;
-        border-radius: 12px;
-        padding: 24px;
-        width: 440px;
-        box-shadow: 0 12px 36px rgba(0,0,0,0.8);
-        color: #e2e8f0;
-        position: relative;
-    }
-    .cloud-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 12px;
-    }
-    .cloud-title {
-        font-size: 16px;
-        font-weight: bold;
-        color: #fff;
-        margin: 0;
-    }
-    .tooltip-container {
-        position: relative;
-        display: inline-block;
-        cursor: pointer;
-    }
-    .tooltip-icon {
-        width: 22px; height: 22px;
-        background: #334155;
-        color: #94a3b8;
-        border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 12px; font-weight: bold;
-        border: 1px solid #475569;
-    }
-    .tooltip-text {
-        visibility: hidden;
-        width: 260px;
-        background: #0f172a;
-        color: #cbd5e1;
-        text-align: left;
-        border-radius: 6px;
-        padding: 8px 10px;
-        position: absolute;
-        z-index: 1;
-        bottom: 130%;
-        right: 0;
-        font-size: 11px;
-        line-height: 1.4;
-        border: 1px solid #334155;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-        opacity: 0;
-        transition: opacity 0.2s;
-    }
-    .tooltip-container:hover .tooltip-text {
-        visibility: visible;
-        opacity: 1;
-    }
-    .cloud-desc {
-        font-size: 13px;
-        color: #94a3b8;
-        margin-bottom: 14px;
-        line-height: 1.4;
-    }
-    .cloud-prompt-label {
-        font-size: 13px;
-        color: #cbd5e1;
-        margin-bottom: 12px;
-        display: block;
-        font-weight: 500;
-    }
-    .cloud-columns-row {
-        display: flex;
-        gap: 12px;
-        margin-bottom: 16px;
-    }
-    .cloud-col {
-        flex: 1;
-        background: #141720;
-        border: 1px solid #2a2e3d;
-        border-radius: 8px;
-        padding: 12px;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-    }
-    .cloud-col-title {
-        font-size: 11px;
-        font-weight: bold;
-        color: #94a3b8;
-        text-transform: uppercase;
-        margin-bottom: 6px;
-    }
-    .cloud-col-time {
-        font-size: 12px;
-        color: #f8fafc;
-        margin-bottom: 12px;
-        font-weight: 600;
-    }
-    .cloud-btn {
-        width: 100%;
-        padding: 9px;
-        border: none;
-        font-weight: bold;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 12px;
-        text-align: center;
-        display: inline-flex;
-        justify-content: center;
-        align-items: center;
-        gap: 4px;
-    }
-    .cloud-btn-download { background: #5865F2; color: white; }
-    .cloud-btn-upload { background: #334155; color: #cbd5e1; border: 1px solid #475569; }
-    .cloud-btn-reject {
-        width: 100%;
-        padding: 8px;
-        background: #141720;
-        border: 1px solid #2a2e3d;
-        color: #94a3b8;
-        font-weight: bold;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 12px;
-    }
-    .cloud-status-box {
-        font-size: 11px;
-        padding: 8px;
-        background: #141720;
-        border-radius: 6px;
-        border: 1px solid #2a2e3d;
-        text-align: center;
-        cursor: pointer;
-    }
-
-    /* --- ANIMACJA ŁADOWANIA (KROPKI) --- */
-    .loading-dots {
-        display: inline-flex;
-        align-items: center;
-        gap: 3px;
-        margin-left: 2px;
-    }
-    .loading-dots span {
-        animation: blink 1.4s infinite both;
-        height: 5px;
-        width: 5px;
-        background-color: currentColor;
-        display: inline-block;
-        border-radius: 50%;
-    }
-    .loading-dots span:nth-child(2) { animation-delay: .2s; }
-    .loading-dots span:nth-child(3) { animation-delay: .4s; }
-    @keyframes blink {
-        0% { opacity: .2; }
-        20% { opacity: 1; }
-        100% { opacity: .2; }
-    }
-
-    /* --- LEAFLET POPUP I STYL ELEMENTÓW --- */
-    .leaflet-popup-content-wrapper, .leaflet-popup-tip {
-        background: transparent !important;
-        box-shadow: none !important;
-        padding: 0 !important;
-    }
-    .leaflet-popup-content { margin: 0 !important; line-height: normal !important; }
-    .leaflet-container a.leaflet-popup-close-button { display: none !important; }
-
-    .popup-box {
-        font-family: sans-serif;
-        color: #e2e8f0;
-        background: #1e222d;
-        padding: 14px;
-        border-radius: 10px;
-        width: 240px;
-        border: 1px solid #2a2e3d;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.7);
-    }
-    .popup-box input, .popup-box textarea {
-        width: 100%;
-        box-sizing: border-box;
-        padding: 7px 10px;
-        margin: 4px 0 10px 0;
-        background: #141720;
-        border: 1px solid #2a2e3d;
-        color: white;
-        border-radius: 6px;
-        font-size: 12px;
-        outline: none;
-    }
-    .popup-box input:focus, .popup-box textarea:focus { border-color: #00b894; }
-    .popup-img {
-        max-width: 100%;
-        border-radius: 6px;
-        margin: 8px 0;
-        display: block;
-        border: 1px solid #2a2e3d;
-        cursor: pointer;
-    }
-    .collected-btn {
-        width: 100%;
-        padding: 8px;
-        background: #00b894;
-        border: none;
-        color: white;
-        font-weight: bold;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 12px;
-        margin-top: 6px;
-        text-align: center;
-    }
-    .collected-btn.uncollect { background: #ef4444; }
-    .collected-btn.grey-btn { background: #334155; color: #cbd5e1; border: 1px solid #475569; }
-    .collected-btn.grey-btn:hover { background: #475569; }
-
-    .marker-zebrany-cukierki {
-        opacity: 0.25;
-        filter: grayscale(100%);
-        transition: opacity 0.3s;
-    }
-    .marker-zebrany-dynie {
-        opacity: 1.0;
-        transition: opacity 0.3s;
-    }
-
-    #image-modal {
-        display: none;
-        position: fixed;
-        z-index: 99999;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background-color: rgba(0, 0, 0, 0.85);
-        justify-content: center; align-items: center;
-        cursor: pointer;
-    }
-    #image-modal img {
-        max-width: 90%; max-height: 90%; border-radius: 8px; border: 2px solid #2a2e3d;
-    }
-</style>
-
-
-<div class="menu-section">
-    <h4 id="progress-header-title">Postęp znajdziek</h4>
-    <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; margin-bottom: 10px; color: #cbd5e1;">
-        <input type="checkbox" id="hide-collected-chk" style="accent-color: #00b894; width: 16px; height: 16px; cursor: pointer;">
-        <span id="hide-collected-label">Ukryj zebrane</span>
-    </label>
-    <button id="reset-progress-btn" class="user-action-btn" style="background: #334155; font-size: 12px;">Zresetuj lokacje</button>
-</div>
-
-<div class="menu-section">
-    <h4>Wybierz event</h4>
-    <a href="map.html?event=dynie2026&json=dynie26.json" class="event-btn" id="btn-dynie2026">🎃 Dynie Halloween 2026</a>
-    <a href="map.html?event=cukierki2026&json=cukierki26.json" class="event-btn" id="btn-cukierki2026">🍬 Cukierki (NPC) 2026</a>
-    <a href="fabula.html" class="event-btn" style="text-decoration: none;">📖 Fabuła Halloween 2026</a>
-</div>
-
-<div class="menu-section">
-    <h4>Chmura</h4>
-    <div id="cloud-status-indicator" class="cloud-status-box" onclick="otworzRecznaSynchronizacje()">
-        Sprawdzanie stanu...
-    </div>
-</div>
-
-<div class="menu-section admin-box">
-    <h4>Panel Administratora</h4>
-    <div id="admin-login-view">
-        <input type="password" id="admin-pass" placeholder="Hasło admina">
-        <button id="admin-login-btn">Zaloguj</button>
-        <div id="admin-err" class="admin-status" style="color: #ff5252; display: none;">Błędne hasło!</div>
-    </div>
-    <div id="admin-logged-view" style="display: none;">
-        <div class="admin-status" style="color: #00b894; font-weight: bold; margin-bottom: 6px;">✓ Tryb edycji/dodawania aktywny</div>
-        <button id="admin-logout-btn" style="background: #ef4444; margin-bottom: 8px;">Zablokuj panel</button>
-        
-        <div style="font-size: 11px; color: #94a3b8; margin-bottom: 4px;">Koszyk zmian dla: <b id="current-json-label" style="color:#00b894;"></b></div>
-        <button onclick="kopiujCaloscJson()" style="background: #3b82f6; margin-bottom: 6px;">Kopiuj całą tablicę JSON</button>
-        <div id="cart-items" class="changes-cart">Brak lokalnych zmian.</div>
-    </div>
-</div>
-
-<div class="menu-section" style="font-size: 10px; color: #64748b; line-height: 1.3; text-align: justify; border-bottom: none; margin-bottom: 0; padding-bottom: 0;">
-    <b>Nota informacyjna:</b> Narzędzie wyłącznie do użytku wewnętrznego organizacji Chrabstwo. Mapa ma charakter pomocniczy, zakaz handlu i dystrybucji komercyjnej. Autor projektu nie ponosi żadnej odpowiedzialności za dalsze udostępnianie mapy osobom trzecim. Zgodnie z wytycznymi serwera.
-</div>
+</body>
+</html>
