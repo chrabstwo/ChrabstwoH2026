@@ -407,6 +407,14 @@
             border: 1px solid #2a2e3d;
             text-align: center;
             cursor: pointer;
+            width: 100%;
+            height: 38px; /* Sztywna wysokość zapobiegająca skakaniu */
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
         }
 
         /* --- ANIMACJA ŁADOWANIA (KROPKI) --- */
@@ -527,10 +535,10 @@
                 <div class="tooltip-text">Migracja i zapis w chmurze pozwala na zachowanie postępów znajdziek na koncie Discord.</div>
             </div>
         </div>
-        <div class="cloud-desc" id="cloud-modal-desc">
+        <div class="cloud-desc">
             Dane zapisane w chmurze różnią się od Twojego lokalnego stanu w przeglądarce.
         </div>
-        <span class="cloud-prompt-label" id="cloud-modal-label">Wybierz źródło, które chcesz zachować:</span>
+        <span class="cloud-prompt-label">Wybierz źródło, które chcesz zachować:</span>
         <div class="cloud-columns-row">
             <div class="cloud-col">
                 <div>
@@ -697,7 +705,7 @@
 
     async function sprawdzSynchronizacje() {
         const lokalneDane = pobierzLokalne();
-        const czasLokalnyStr = pobierzCzasLokalny().toISOString().slice(0, 16); // format do porównania minut
+        const czasLokalnyStr = pobierzCzasLokalny().toISOString().slice(0, 16);
 
         try {
             const res = await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/read?discordId=${discordUserId}`);
@@ -713,14 +721,19 @@
                 const chmuraData = data.updatedAt ? new Date(data.updatedAt) : null;
                 const czasChmuraStr = chmuraData ? chmuraData.toISOString().slice(0, 16) : "";
                 
+                if (data.niemam && typeof data.niemam === 'object') {
+                    statusNieMam = data.niemam;
+                    localStorage.setItem(`chrabstwo_niemam_${EVENT_NAME}`, JSON.stringify(statusNieMam));
+                }
+
                 const setLok = new Set(lokalneDane);
                 const setChm = new Set(chmuraDane);
                 const identyczneTablice = setLok.size === setChm.size && [...setLok].every(id => setChm.has(id));
-                const identyczneCzasy = czasLokalnyStr === czasChmuraStr;
+                const identyczneCzasy = czasLokalnyStr && czasChmuraStr && (czasLokalnyStr === czasChmuraStr);
 
-                if (identyczneTablice || identyczneCzasy) {
+                if (identyczneCzasy || identyczneTablice) {
                     zebraneElementy = lokalneDane;
-                    aktualizujStatusChmury(true, chmuraData);
+                    aktualizujStatusChmury(true, chmuraData || pobierzCzasLokalny());
                 } else {
                     zebraneElementy = lokalneDane;
                     aktualizujStatusChmury(false, chmuraData, "Konflikt / Niezsynchronizowane");
@@ -738,12 +751,17 @@
         const indicator = document.getElementById("cloud-status-indicator");
         const dataStr = data ? data.toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
         
+        if (customText && customText.includes("offline")) {
+            indicator.style.color = "#f59e0b";
+            indicator.innerHTML = `⚠️ Tryb offline<br><span style="color:#64748b; font-size:10px;">Brak połączenia z chmurą</span>`;
+            return;
+        }
         if (customText) {
             indicator.style.color = "#f59e0b";
             indicator.innerHTML = `⚠️ ${customText}<br><span style="color:#64748b; font-size:10px;">z dnia ${dataStr} (Kliknij)</span>`;
             return;
         }
-        if (zsynchronizowano && data) {
+        if (zsynchronizowano) {
             indicator.style.color = "#00b894";
             indicator.innerHTML = `✓ Zsynchronizowano z chmurą<br><span style="color:#64748b; font-size:10px;">z dnia ${dataStr}</span>`;
         } else {
@@ -764,16 +782,8 @@
             }
         } catch(e) {}
         
-        const czasLokalny = pobierzCzasLokalny();
-        const czasChmura = dataChmuryStr !== "-" ? new Date(dataChmuryStr.split(', ')[1]?.split(':').join(':') ? dataChmuryStr : Date.now()) : null; // bezpieczny pars
-        
-        document.getElementById("local-timestamp").innerText = czasLokalny.toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        document.getElementById("local-timestamp").innerText = pobierzCzasLokalny().toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         document.getElementById("cloud-timestamp").innerText = dataChmuryStr;
-        
-        // Ukrywanie/pokazywanie opcji wyboru w konflikcie, jeśli czasy są identyczne
-        const localTimeStrFormatted = czasLokalny.toISOString().slice(0, 16);
-        const cloudTimeStrFormatted = czasChmura ? czasChmura.toISOString().slice(0, 16) : "";
-
         document.getElementById("cloud-overlay").style.display = "flex";
     };
 
@@ -793,6 +803,10 @@
                 if (data.exists) {
                     zebraneElementy = data.items || [];
                     zapiszLokalne(zebraneElementy);
+                    if (data.niemam && typeof data.niemam === 'object') {
+                        statusNieMam = data.niemam;
+                        localStorage.setItem(`chrabstwo_niemam_${EVENT_NAME}`, JSON.stringify(statusNieMam));
+                    }
                     const cloudDate = data.updatedAt ? new Date(data.updatedAt) : new Date();
                     localStorage.setItem(localMetaKey, cloudDate.toISOString());
                     aktualizujStatusChmury(true, cloudDate);
@@ -837,7 +851,12 @@
         const endpoint = migracja ? `${WORKER_URL}/members/event/${EVENT_NAME}/migrate` : `${WORKER_URL}/members/event/${EVENT_NAME}/write`;
         try {
             const nowIso = new Date().toISOString();
-            const payload = { discordId: discordUserId, items: items, updatedAt: nowIso };
+            const payload = { 
+                discordId: discordUserId, 
+                items: items, 
+                niemam: statusNieMam, 
+                updatedAt: nowIso 
+            };
 
             const response = await fetch(endpoint, {
                 method: 'POST',
@@ -865,12 +884,13 @@
             localStorage.removeItem(`chrabstwo_niemam_${EVENT_NAME}`);
             zapiszLokalne([]);
             try {
-                await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/reset`, {
-                    method: 'DELETE',
+                const nowIso = new Date().toISOString();
+                await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/write`, {
+                    method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ discordId: discordUserId })
+                    body: JSON.stringify({ discordId: discordUserId, items: [], niemam: {}, updatedAt: nowIso })
                 });
-                aktualizujStatusChmury(true, new Date());
+                aktualizujStatusChmury(true, new Date(nowIso));
             } catch(e) {
                 aktualizujStatusChmury(false, null, "Tryb offline");
             }
@@ -995,26 +1015,27 @@
         odswiezMarkeryNaMapie();
         map.closePopup();
 
-        // Efekt animacji ładowania (kropki) na wskaźniku chmury po lewej stronie przy zmianie stanu znajdzki
+        // Animacja kropek po lewej stronie z zachowaniem stałej wysokości
         const indicator = document.getElementById("cloud-status-indicator");
         indicator.innerHTML = '<span class="loading-dots"><span></span><span></span><span></span></span>';
 
         try {
-            if (akcjaTyp !== 'niemam') {
-                const nowIso = new Date().toISOString();
-                await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/write`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ discordId: discordUserId, itemId: strId, actionType: apiAkcja, updatedAt: nowIso })
-                });
-                setTimeout(() => {
-                    aktualizujStatusChmury(true, new Date(nowIso));
-                }, 1000); // powrót po sekundzie z nową datą
-            } else {
-                setTimeout(() => {
-                    aktualizujStatusChmury(true, pobierzCzasLokalny());
-                }, 1000);
-            }
+            const nowIso = new Date().toISOString();
+            await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/write`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    discordId: discordUserId, 
+                    itemId: strId, 
+                    actionType: apiAkcja, 
+                    items: zebraneElementy,
+                    niemam: statusNieMam, 
+                    updatedAt: nowIso 
+                })
+            });
+            setTimeout(() => {
+                aktualizujStatusChmury(true, new Date(nowIso));
+            }, 1000);
         } catch(e) {
             setTimeout(() => {
                 aktualizujStatusChmury(false, null, "Tryb offline");
@@ -1218,4 +1239,3 @@
 
 </body>
 </html>
-```[cite: 6, 7]
