@@ -749,7 +749,7 @@
     window.akcjaPobierzZChmury = async function() {
         const btn = document.getElementById("btn-download-cloud");
         const orgHtml = btn.innerHTML;
-        btn.innerHTML = 'Pobieranie<span class="loading-dots"><span></span><span></span><span></span></span>';
+        btn.innerHTML = 'Pobieram<span class="loading-dots"><span></span><span></span><span></span></span>';
         btn.disabled = true;
 
         try {
@@ -779,7 +779,7 @@
     window.akcjaWyslijDoChmury = async function() {
         const btn = document.getElementById("btn-upload-cloud");
         const orgHtml = btn.innerHTML;
-        btn.innerHTML = 'Wysyłanie<span class="loading-dots"><span></span><span></span><span></span></span>';
+        btn.innerHTML = 'Wysyłam<span class="loading-dots"><span></span><span></span><span></span></span>';
         btn.disabled = true;
 
         const lokalneDane = pobierzLokalne();
@@ -799,10 +799,14 @@
     async function wyslijDoChmury(items, migracja = false) {
         const endpoint = migracja ? `${WORKER_URL}/members/event/${EVENT_NAME}/migrate` : `${WORKER_URL}/members/event/${EVENT_NAME}/write`;
         try {
+            const payload = migracja 
+                ? { discordId: discordUserId, items: items }
+                : { discordId: discordUserId, items: items, updatedAt: new Date().toISOString() };
+
             const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ discordId: discordUserId, items, updatedAt: new Date().toISOString() })
+                body: JSON.stringify(payload)
             });
             if (response.ok) {
                 localStorage.setItem(localMetaKey, new Date().toISOString());
