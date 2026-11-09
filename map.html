@@ -741,7 +741,7 @@
 
         const lokalneDane = pobierzLokalne();
         const czasLokalnyObj = pobierzCzasLokalny();
-        const czasLokalnyStr = czasLokalnyObj.toISOString().slice(0, 16);
+        const czasLokalnyIsoSec = czasLokalnyObj.toISOString().slice(0, 19); // Dokładność do sekund YYYY-MM-DDTHH:MM:SS
 
         try {
             const res = await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/read?discordId=${discordUserId}`);
@@ -755,36 +755,38 @@
                 uruchomMapę();
             } else {
                 const chmuraData = data.updatedAt ? new Date(data.updatedAt) : null;
-                const czasChmuraStr = chmuraData ? chmuraData.toISOString().slice(0, 16) : "";
+                const czasChmuraIsoSec = chmuraData ? chmuraData.toISOString().slice(0, 19) : "";
                 
                 if (data.niemam && typeof data.niemam === 'object') {
                     statusNieMam = data.niemam;
                     localStorage.setItem(`chrabstwo_niemam_${EVENT_NAME}`, JSON.stringify(statusNieMam));
                 }
 
-                const identyczneCzasy = czasLokalnyStr && czasChmuraStr && (czasLokalnyStr === czasChmuraStr);
+                // Sprawdzamy pełną zgodność co do sekundy oraz zgodność zawartości tablic i "niemam"
+                const identyczneCzasy = czasLokalnyIsoSec && czasChmuraIsoSec && (czasLokalnyIsoSec === czasChmuraIsoSec);
+                
+                const chmuraDane = data.items || [];
+                const setLok = new Set(lokalneDane);
+                const setChm = new Set(chmuraDane);
+                const identyczneTablice = setLok.size === setChm.size && [...setLok].every(id => setChm.has(id));
 
-                if (identyczneCzasy) {
+                const chmuraNiemam = data.niemam || {};
+                const identyczneNiemam = JSON.stringify(statusNieMam) === JSON.stringify(chmuraNiemam);
+
+                if (identyczneCzasy || (identyczneTablice && identyczneNiemam)) {
                     zebraneElementy = lokalneDane;
-                    aktualizujStatusChmury(true, chmuraData);
+                    aktualizujStatusChmury(true, chmuraData || czasLokalnyObj);
                 } else {
-                    const chmuraDane = data.items || [];
-                    const setLok = new Set(lokalneDane);
-                    const setChm = new Set(chmuraDane);
-                    const identyczneTablice = setLok.size === setChm.size && [...setLok].every(id => setChm.has(id));
-
-                    if (identyczneTablice) {
-                        zebraneElementy = lokalneDane;
-                        aktualizujStatusChmury(true, chmuraData || czasLokalnyObj);
-                    } else {
-                        zebraneElementy = lokalneDane;
-                        aktualizujStatusChmury(false, chmuraData, "Konflikt / Niezsynchronizowane");
-                    }
+                    // Skoro dane lokalne różnią się od chmury, NIE synchronizujemy automatycznie!
+                    // Ustawiamy status konfliktu, aby użytkownik sam zdecydował przyciskiem.
+                    zebraneElementy = lokalneDane;
+                    aktualizujStatusChmury(false, chmuraData, "Konflikt / Niezsynchronizowane");
                 }
                 spinner.style.display = "none";
                 uruchomMapę();
             }
         } catch (e) {
+            // Jesteśmy offline – ładujemy lokalne dane, zero konfliktu, zero zapisów do chmury
             zebraneElementy = lokalneDane;
             aktualizujStatusChmury(false, null, "Tryb offline");
             spinner.style.display = "none";
@@ -818,6 +820,8 @@
     window.otworzRecznaSynchronizacje = async function() {
         let dataChmuryStr = "-";
         let chmuraDateObj = null;
+        let maPolaczenie = true;
+
         try {
             const res = await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/read?discordId=${discordUserId}`);
             if (res.ok) {
@@ -827,16 +831,23 @@
                     dataChmuryStr = chmuraDateObj.toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
                 }
             }
-        } catch(e) {}
+        } catch(e) {
+            maPolaczenie = false;
+        }
+
+        if (!maPolaczenie) {
+            alert("Brak połączenia z chmurą (Tryb offline). Nie można otworzyć panelu synchronizacji.");
+            return;
+        }
         
         const lokalnyDateObj = pobierzCzasLokalny();
-        const lokalnyStrMinutowy = lokalnyDateObj.toISOString().slice(0, 16);
-        const chmuraStrMinutowy = chmuraDateObj ? chmuraDateObj.toISOString().slice(0, 16) : "";
+        const lokalnyIsoSec = lokalnyDateObj.toISOString().slice(0, 19);
+        const chmuraIsoSec = chmuraDateObj ? chmuraDateObj.toISOString().slice(0, 19) : "";
 
-        // Jeśli czasy co do minuty są identyczne, NIE otwieraj okienka konfliktu, tylko pokaż komunikat/odśwież status!
-        if (lokalnyStrMinutowy && chmuraStrMinutowy && (lokalnyStrMinutowy === chmuraStrMinutowy)) {
+        // Jeśli dane są identyczne co do sekundy, pomijamy modal konfliktu i odświeżamy status na zielono
+        if (lokalnyIsoSec && chmuraIsoSec && (lokalnyIsoSec === chmuraIsoSec)) {
             aktualizujStatusChmury(true, chmuraDateObj);
-            return; // Przerywamy otwieranie modala konfliktu!
+            return;
         }
 
         document.getElementById("local-timestamp").innerText = lokalnyDateObj.toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -1072,12 +1083,17 @@
         odswiezMarkeryNaMapie();
         map.closePopup();
 
+        // 1. Zapisujemy lokalnie (co od razu aktualizuje czas lokalny i stempel w pamięci)
+        zapiszLokalne(zebraneElementy);
+
+        // 2. Próbujemy wysłać zmianę do chmury w tle.
+        // Jeśli sieć padła lub jest konflikt, złapiemy błąd/odrzucimy, ale stan lokalny jest bezpieczny!
         const indicator = document.getElementById("cloud-status-indicator");
         indicator.innerHTML = '<span class="loading-dots"><span></span><span></span><span></span></span>';
 
         try {
             const nowIso = new Date().toISOString();
-            await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/write`, {
+            const response = await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/write`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
@@ -1089,13 +1105,20 @@
                     updatedAt: nowIso 
                 })
             });
-            setTimeout(() => {
-                aktualizujStatusChmury(true, new Date(nowIso));
-            }, 1000);
+
+            if (response.ok) {
+                localStorage.setItem(localMetaKey, nowIso);
+                setTimeout(() => {
+                    aktualizujStatusChmury(true, new Date(nowIso));
+                }, 800);
+            } else {
+                throw new Error("Błąd zapisu w chmurze");
+            }
         } catch(e) {
+            // Jeśli wystąpił problem z siecią, bezpiecznie przechodzimy w tryb offline bez naruszania danych
             setTimeout(() => {
                 aktualizujStatusChmury(false, null, "Tryb offline");
-            }, 1000);
+            }, 800);
         }
     };
 
