@@ -358,7 +358,8 @@
         }
         .cloud-btn {
             width: 100%;
-            padding: 9px;
+            height: 35px; /* Stała wysokość zapobiegająca zmianie rozmiaru */
+            padding: 0 9px;
             border: none;
             font-weight: bold;
             border-radius: 6px;
@@ -369,12 +370,22 @@
             align-items: center;
             justify-content: center;
             gap: 4px;
+            box-sizing: border-box;
+            transition: background 0.15s ease, transform 0.1s ease, filter 0.15s ease;
+        }
+        .cloud-btn:active {
+            transform: scale(0.97); /* Discordowy efekt kliknięcia (wgniecenia) */
         }
         .cloud-btn-download { background: #5865F2; color: white; }
+        .cloud-btn-download:hover { background: #4752c4; }
+        
         .cloud-btn-upload { background: #334155; color: #cbd5e1; border: 1px solid #475569; }
+        .cloud-btn-upload:hover { background: #3e4c66; color: white; }
+
         .cloud-btn-reject {
             width: 100%;
-            padding: 8px;
+            height: 35px;
+            padding: 0 8px;
             background: #141720;
             border: 1px solid #2a2e3d;
             color: #94a3b8;
@@ -382,7 +393,12 @@
             border-radius: 6px;
             cursor: pointer;
             font-size: 12px;
+            box-sizing: border-box;
+            transition: all 0.15s ease;
         }
+        .cloud-btn-reject:hover { background: #2a2e3d; color: white; }
+        .cloud-btn-reject:active { transform: scale(0.97); }
+
         .cloud-status-box {
             font-size: 11px;
             padding: 8px;
