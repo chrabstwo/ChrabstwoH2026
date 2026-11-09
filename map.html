@@ -587,6 +587,7 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+    const WORKER_URL = "https://patient-star-01ba.frebcraft17.workers.dev";
     const urlParams = new URLSearchParams(window.location.search);
     const EVENT_NAME = urlParams.get('event') || 'dynie2026';
     const JSON_FILE = urlParams.get('json') || 'dynie26.json';
@@ -660,12 +661,17 @@
     async function sprawdzSynchronizacje() {
         const lokalneDane = pobierzLokalne();
         try {
-            const res = await fetch(`/members/event/${EVENT_NAME}/read?discordId=${discordUserId}`);
+            const res = await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/read?discordId=${discordUserId}`);
             const data = await res.json();
 
-            if (!data.exists) {
-                await wyslijDoChmury(lokalneDane, true);
-                aktualizujStatusChmury(true, new Date());
+            // Jeśli w chmurze nie ma danych (pusta chmura), automatycznie wyślij lokalne dane jeśli istnieją
+            if (!data.exists || !data.items || !Array.isArray(data.items) || data.items.length === 0) {
+                if (lokalneDane.length > 0) {
+                    await wyslijDoChmury(lokalneDane, true);
+                    aktualizujStatusChmury(true, new Date());
+                } else {
+                    aktualizujStatusChmury(true, new Date());
+                }
                 zebraneElementy = lokalneDane;
                 uruchomMapę();
             } else {
@@ -680,6 +686,7 @@
                     zebraneElementy = lokalneDane;
                     aktualizujStatusChmury(true, chmuraData);
                 } else {
+                    // Jeśli chmura ma zapis, a lokalnie jest inaczej, dajemy wybór / niezsynchronizowane
                     zebraneElementy = lokalneDane;
                     aktualizujStatusChmury(false, null, "Niezsynchronizowane zmiany");
                 }
@@ -712,7 +719,7 @@
     window.otworzRecznaSynchronizacje = async function() {
         let dataChmuryStr = "-";
         try {
-            const res = await fetch(`/members/event/${EVENT_NAME}/read?discordId=${discordUserId}`);
+            const res = await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/read?discordId=${discordUserId}`);
             const data = await res.json();
             if (data.exists && data.updatedAt) {
                 dataChmuryStr = new Date(data.updatedAt).toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -727,7 +734,7 @@
     
     window.akcjaPobierzZChmury = async function() {
         try {
-            const res = await fetch(`/members/event/${EVENT_NAME}/read?discordId=${discordUserId}`);
+            const res = await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/read?discordId=${discordUserId}`);
             const data = await res.json();
             if (data.exists) {
                 zebraneElementy = data.items || [];
@@ -748,15 +755,22 @@
     };
 
     async function wyslijDoChmury(items, migracja = false) {
-        const endpoint = migracja ? `/members/event/${EVENT_NAME}/migrate` : `/members/event/${EVENT_NAME}/write`;
+        const endpoint = migracja ? `${WORKER_URL}/members/event/${EVENT_NAME}/migrate` : `${WORKER_URL}/members/event/${EVENT_NAME}/write`;
         try {
-            await fetch(endpoint, {
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(migracja ? { discordId: discordUserId, items } : { discordId: discordUserId, items, updatedAt: new Date().toISOString() })
             });
-            localStorage.setItem(localMetaKey, new Date().toISOString());
-        } catch(e) {}
+            if (response.ok) {
+                localStorage.setItem(localMetaKey, new Date().toISOString());
+                aktualizujStatusChmury(true, new Date());
+            } else {
+                aktualizujStatusChmury(false, null, "Błąd zapisu w chmurze");
+            }
+        } catch(e) {
+            aktualizujStatusChmury(false, null, "Tryb offline");
+        }
     }
 
     document.getElementById("reset-progress-btn").addEventListener("click", async () => {
@@ -764,13 +778,15 @@
             zebraneElementy = [];
             zapiszLokalne([]);
             try {
-                await fetch(`/members/event/${EVENT_NAME}/reset`, {
+                await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/reset`, {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ discordId: discordUserId })
                 });
                 aktualizujStatusChmury(true, new Date());
-            } catch(e) {}
+            } catch(e) {
+                aktualizujStatusChmury(false, null, "Tryb offline");
+            }
             odswiezMarkeryNaMapie();
         }
     });
@@ -860,13 +876,19 @@
         map.closePopup();
 
         try {
-            await fetch(`/members/event/${EVENT_NAME}/write`, {
+            const response = await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/write`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ discordId: discordUserId, itemId: strId, actionType: akcja, updatedAt: new Date().toISOString() })
             });
-            aktualizujStatusChmury(true, new Date());
-        } catch(e) {}
+            if (response.ok) {
+                aktualizujStatusChmury(true, new Date());
+            } else {
+                aktualizujStatusChmury(false, null, "Błąd zapisu w chmurze");
+            }
+        } catch(e) {
+            aktualizujStatusChmury(false, null, "Tryb offline");
+        }
     };
 
     function odswiezMarkeryNaMapie() {
