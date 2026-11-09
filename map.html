@@ -358,7 +358,7 @@
         }
         .cloud-btn {
             width: 100%;
-            height: 35px; /* Stała wysokość zapobiegająca zmianie rozmiaru */
+            height: 35px;
             padding: 0 9px;
             border: none;
             font-weight: bold;
@@ -374,7 +374,7 @@
             transition: background 0.15s ease, transform 0.1s ease, filter 0.15s ease;
         }
         .cloud-btn:active {
-            transform: scale(0.97); /* Discordowy efekt kliknięcia (wgniecenia) */
+            transform: scale(0.97);
         }
         .cloud-btn-download { background: #5865F2; color: white; }
         .cloud-btn-download:hover { background: #4752c4; }
@@ -537,14 +537,18 @@
                     <div class="cloud-col-title">Ostatni zapis (lokalny)</div>
                     <div class="cloud-col-time" id="local-timestamp">-</div>
                 </div>
-                <button id="btn-upload-cloud" class="cloud-btn cloud-btn-upload" onclick="akcjaWyslijDoChmury()">Wyślij do chmury</button>
+                <button id="btn-upload-cloud" class="cloud-btn cloud-btn-upload" onclick="akcjaWyslijDoChmury()">
+                    <span>Wyślij do chmury</span>
+                </button>
             </div>
             <div class="cloud-col">
                 <div>
                     <div class="cloud-col-title">Ostatni zapis w chmurze</div>
                     <div class="cloud-col-time" id="cloud-timestamp">-</div>
                 </div>
-                <button id="btn-download-cloud" class="cloud-btn cloud-btn-download" onclick="akcjaPobierzZChmury()">Pobierz z chmury</button>
+                <button id="btn-download-cloud" class="cloud-btn cloud-btn-download" onclick="akcjaPobierzZChmury()">
+                    <span>Pobierz z chmury</span>
+                </button>
             </div>
         </div>
         <button class="cloud-btn-reject" onclick="zamknijCloudModal()">Odrzuć</button>
@@ -704,7 +708,7 @@
                 uruchomMapę();
             } else {
                 const chmuraDane = data.items || [];
-                const chmuraData = data.updatedAt ? new Date(data.updatedAt) : new Date();
+                const chmuraData = data.updatedAt ? new Date(data.updatedAt) : null;
                 
                 const setLok = new Set(lokalneDane);
                 const setChm = new Set(chmuraDane);
@@ -728,18 +732,19 @@
 
     function aktualizujStatusChmury(zsynchronizowano, data, customText = null) {
         const indicator = document.getElementById("cloud-status-indicator");
+        const dataStr = data ? data.toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+        
         if (customText) {
             indicator.style.color = "#f59e0b";
-            indicator.innerHTML = `⚠️ ${customText}<br><span style="color:#64748b; font-size:10px;">Kliknij, aby rozwiązać</span>`;
+            indicator.innerHTML = `⚠️ ${customText}<br><span style="color:#64748b; font-size:10px;">z dnia ${dataStr} (Kliknij)</span>`;
             return;
         }
         if (zsynchronizowano && data) {
-            const dataStr = data.toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
             indicator.style.color = "#00b894";
             indicator.innerHTML = `✓ Zsynchronizowano z chmurą<br><span style="color:#64748b; font-size:10px;">z dnia ${dataStr}</span>`;
         } else {
             indicator.style.color = "#f59e0b";
-            indicator.innerHTML = `⚠️ Niezsynchronizowane zmiany<br><span style="color:#64748b; font-size:10px;">Kliknij, aby zarządzać</span>`;
+            indicator.innerHTML = `⚠️ Niezsynchronizowane zmiany<br><span style="color:#64748b; font-size:10px;">z dnia ${dataStr} (Kliknij)</span>`;
         }
     }
 
@@ -763,8 +768,9 @@
     
     window.akcjaPobierzZChmury = async function() {
         const btn = document.getElementById("btn-download-cloud");
-        const orgHtml = btn.innerHTML;
-        btn.innerHTML = '<span class="loading-dots"><span></span><span></span><span></span></span>';
+        const spanEl = btn.querySelector("span");
+        const orgHtml = spanEl.innerHTML;
+        spanEl.innerHTML = '<span class="loading-dots"><span></span><span></span><span></span></span>';
         btn.disabled = true;
 
         try {
@@ -774,7 +780,8 @@
                 if (data.exists) {
                     zebraneElementy = data.items || [];
                     zapiszLokalne(zebraneElementy);
-                    aktualizujStatusChmury(true, new Date(data.updatedAt || Date.now()));
+                    const cloudDate = data.updatedAt ? new Date(data.updatedAt) : new Date();
+                    aktualizujStatusChmury(true, cloudDate);
                     odswiezMarkeryNaMapie();
                     document.getElementById("cloud-overlay").style.display = "none";
                 } else {
@@ -786,21 +793,22 @@
         } catch(e) {
             alert("Błąd sieci. Sprawdź połączenie.");
         } finally {
-            btn.innerHTML = orgHtml;
+            spanEl.innerHTML = orgHtml;
             btn.disabled = false;
         }
     };
 
     window.akcjaWyslijDoChmury = async function() {
         const btn = document.getElementById("btn-upload-cloud");
-        const orgHtml = btn.innerHTML;
-        btn.innerHTML = '<span class="loading-dots"><span></span><span></span><span></span></span>';
+        const spanEl = btn.querySelector("span");
+        const orgHtml = spanEl.innerHTML;
+        spanEl.innerHTML = '<span class="loading-dots"><span></span><span></span><span></span></span>';
         btn.disabled = true;
 
         const lokalneDane = pobierzLokalne();
-        const success = await wyslijDoChmury(lokalneDane, true);
+        const success = await wyslijDoChmury(lokalneDane, false);
         
-        btn.innerHTML = orgHtml;
+        spanEl.innerHTML = orgHtml;
         btn.disabled = false;
 
         if (success) {
@@ -814,9 +822,8 @@
     async function wyslijDoChmury(items, migracja = false) {
         const endpoint = migracja ? `${WORKER_URL}/members/event/${EVENT_NAME}/migrate` : `${WORKER_URL}/members/event/${EVENT_NAME}/write`;
         try {
-            const payload = migracja 
-                ? { discordId: discordUserId, items: items }
-                : { discordId: discordUserId, items: items, updatedAt: new Date().toISOString() };
+            const nowIso = new Date().toISOString();
+            const payload = { discordId: discordUserId, items: items, updatedAt: nowIso };
 
             const response = await fetch(endpoint, {
                 method: 'POST',
@@ -824,8 +831,8 @@
                 body: JSON.stringify(payload)
             });
             if (response.ok) {
-                localStorage.setItem(localMetaKey, new Date().toISOString());
-                aktualizujStatusChmury(true, new Date());
+                localStorage.setItem(localMetaKey, nowIso);
+                aktualizujStatusChmury(true, new Date(nowIso));
                 return true;
             } else {
                 aktualizujStatusChmury(false, null, "Błąd zapisu w chmurze");
@@ -976,13 +983,14 @@
 
         try {
             if (akcjaTyp !== 'niemam') {
+                const nowIso = new Date().toISOString();
                 await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/write`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ discordId: discordUserId, itemId: strId, actionType: apiAkcja, updatedAt: new Date().toISOString() })
+                    body: JSON.stringify({ discordId: discordUserId, itemId: strId, actionType: apiAkcja, updatedAt: nowIso })
                 });
+                aktualizujStatusChmury(true, new Date(nowIso));
             }
-            aktualizujStatusChmury(true, new Date());
         } catch(e) {
             aktualizujStatusChmury(false, null, "Tryb offline");
         }
