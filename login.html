@@ -203,19 +203,22 @@
     });
 
     // Funkcja odpytująca Cloudflare Workera (/member-read)
-    function zweryfikujIWejdz(userId) {
+function zweryfikujIWejdz(userId) {
         loaderText.innerText = "Weryfikacja uprawnień członka organizacji...";
 
         fetch(`${WORKER_URL}/member-read?userId=${userId}`)
             .then(res => res.json())
             .then(data => {
                 if (data.allowed) {
+                    // Ustawiamy ważność sesji na 1 godzinę
+                    const zaWodzine = new Date().getTime() + (60 * 60 * 1000);
+                    localStorage.setItem("login_wygasa", zaWodzine);
+
                     loaderText.innerText = "Zalogowano pomyślnie! Ładowanie mapy...";
                     setTimeout(() => {
-                        window.location.href = "index.html"; // Przejście do mapy
+                        window.location.href = "index.html";
                     }, 1000);
                 } else {
-                    // Brak rangi / brak w bazie KV
                     wylogujIBlad("Odmowa dostępu: Twoje konto nie posiada wymaganej rangi 'Członek org' na serwerze Discord.");
                 }
             })
