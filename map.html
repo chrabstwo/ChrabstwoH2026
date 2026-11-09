@@ -295,14 +295,22 @@
         .cloud-desc {
             font-size: 13px;
             color: #94a3b8;
-            margin-bottom: 16px;
+            margin-bottom: 14px;
             line-height: 1.4;
         }
         
+        .cloud-prompt-label {
+            font-size: 13px;
+            color: #cbd5e1;
+            margin-bottom: 12px;
+            display: block;
+            font-weight: 500;
+        }
+
         .cloud-columns-row {
             display: flex;
             gap: 12px;
-            margin-bottom: 14px;
+            margin-bottom: 16px;
         }
         .cloud-col {
             flex: 1;
@@ -326,13 +334,6 @@
             color: #f8fafc;
             margin-bottom: 12px;
             font-weight: 600;
-        }
-
-        .cloud-prompt-label {
-            font-size: 13px;
-            color: #cbd5e1;
-            margin-bottom: 12px;
-            display: block;
         }
 
         .cloud-btn {
@@ -502,6 +503,8 @@
             Dane zapisane w chmurze różnią się od Twojego lokalnego stanu w przeglądarce (np. używałeś mapy podczas braku połączenia).
         </div>
         
+        <span class="cloud-prompt-label">Wybierz źródło, które chcesz zachować:</span>
+
         <div class="cloud-columns-row">
             <div class="cloud-col">
                 <div>
@@ -519,7 +522,6 @@
             </div>
         </div>
 
-        <span class="cloud-prompt-label">Wybierz źródło, które chcesz zachować:</span>
         <button class="cloud-btn-reject" onclick="zamknijCloudModal()">Odrzuć</button>
     </div>
 </div>
@@ -652,11 +654,9 @@
     const localKey = `chrabstwo_zebrane_${EVENT_NAME}`;
     const localMetaKey = `chrabstwo_meta_${EVENT_NAME}`;
 
-    // Kompatybilność ze starymi kluczami (jeśli użytkownik miał zapisane pod dynie2026 / cukierki2026 lub ogólnym)
     function pobierzLokalne() {
         let items = JSON.parse(localStorage.getItem(localKey));
         if (!items) {
-            // Sprawdź stare klucze jako fallback
             if (EVENT_NAME === 'dynie2026') {
                 items = JSON.parse(localStorage.getItem('chrabstwo_zebrane_dynie_dynie2026') || localStorage.getItem('chrabstwo_zebrane_dynie') || "[]");
             } else if (EVENT_NAME === 'cukierki2026') {
@@ -664,7 +664,6 @@
             } else {
                 items = [];
             }
-            // Zapisz od razu pod nowym kluczem, aby uniknąć problemów
             if (items.length > 0) {
                 localStorage.setItem(localKey, JSON.stringify(items));
             }
@@ -675,7 +674,6 @@
     function pobierzCzasLokalny() {
         const meta = localStorage.getItem(localMetaKey);
         if (meta) return new Date(meta);
-        // Jeśli brak dokładnej metadane, zwracamy np. czas ostatniej modyfikacji dokumentu lub obecny jako ostateczność
         return new Date(document.lastModified || Date.now());
     }
 
