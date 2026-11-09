@@ -762,7 +762,6 @@
                     localStorage.setItem(`chrabstwo_niemam_${EVENT_NAME}`, JSON.stringify(statusNieMam));
                 }
 
-                // Bezkompromisowe porównanie czasu co do minuty
                 const identyczneCzasy = czasLokalnyStr && czasChmuraStr && (czasLokalnyStr === czasChmuraStr);
 
                 if (identyczneCzasy) {
@@ -818,17 +817,29 @@
 
     window.otworzRecznaSynchronizacje = async function() {
         let dataChmuryStr = "-";
+        let chmuraDateObj = null;
         try {
             const res = await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/read?discordId=${discordUserId}`);
             if (res.ok) {
                 const data = await res.json();
                 if (data.exists && data.updatedAt) {
-                    dataChmuryStr = new Date(data.updatedAt).toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                    chmuraDateObj = new Date(data.updatedAt);
+                    dataChmuryStr = chmuraDateObj.toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
                 }
             }
         } catch(e) {}
         
-        document.getElementById("local-timestamp").innerText = pobierzCzasLokalny().toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        const lokalnyDateObj = pobierzCzasLokalny();
+        const lokalnyStrMinutowy = lokalnyDateObj.toISOString().slice(0, 16);
+        const chmuraStrMinutowy = chmuraDateObj ? chmuraDateObj.toISOString().slice(0, 16) : "";
+
+        // Jeśli czasy co do minuty są identyczne, NIE otwieraj okienka konfliktu, tylko pokaż komunikat/odśwież status!
+        if (lokalnyStrMinutowy && chmuraStrMinutowy && (lokalnyStrMinutowy === chmuraStrMinutowy)) {
+            aktualizujStatusChmury(true, chmuraDateObj);
+            return; // Przerywamy otwieranie modala konfliktu!
+        }
+
+        document.getElementById("local-timestamp").innerText = lokalnyDateObj.toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         document.getElementById("cloud-timestamp").innerText = dataChmuryStr;
         document.getElementById("cloud-overlay").style.display = "flex";
     };
