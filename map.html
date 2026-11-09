@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chrabstwo 4Life</title>
+    <title>Chrabstwo 4Life - Mapa Eventowa</title>
     
     <!-- Sprawdzenie sesji oraz weryfikacja logowania przez Discorda -->
     <script>
@@ -156,8 +156,9 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        /* Przycisk przełączania między mapami */
-        .back-btn {
+
+        /* Przycisk przełączania między eventami */
+        .event-btn {
             display: block;
             width: 100%;
             padding: 8px;
@@ -173,10 +174,16 @@
             box-sizing: border-box;
             margin-bottom: 8px;
         }
-        .back-btn:hover { 
+        .event-btn:hover { 
             background: #1e222d; 
             border-color: #00b894; 
         }
+        .event-btn.active {
+            background: #141720;
+            color: #00b894;
+            border-color: #00b894;
+        }
+
         .admin-box input {
             width: 100%;
             box-sizing: border-box;
@@ -208,6 +215,124 @@
             font-size: 12px;
             margin-top: 6px;
             text-align: center;
+        }
+
+        /* --- MODAL MIGRACJI (CLOUD SYNC) --- */
+        #migration-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.75);
+            z-index: 99999;
+            justify-content: center;
+            align-items: center;
+            font-family: sans-serif;
+        }
+        .migration-modal {
+            background: #1e222d;
+            border: 1px solid #2a2e3d;
+            border-radius: 12px;
+            padding: 24px;
+            width: 380px;
+            box-shadow: 0 12px 36px rgba(0,0,0,0.8);
+            color: #e2e8f0;
+            position: relative;
+        }
+        .migration-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .migration-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+            margin: 0;
+        }
+        /* Szary guzik "?" z dymkiem */
+        .tooltip-container {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+        }
+        .tooltip-icon {
+            width: 22px; height: 22px;
+            background: #334155;
+            color: #94a3b8;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: bold;
+            border: 1px solid #475569;
+            transition: all 0.2s;
+        }
+        .tooltip-icon:hover {
+            background: #475569;
+            color: #fff;
+        }
+        .tooltip-text {
+            visibility: hidden;
+            width: 260px;
+            background: #0f172a;
+            color: #cbd5e1;
+            text-align: left;
+            border-radius: 6px;
+            padding: 8px 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 130%;
+            right: 0;
+            font-size: 11px;
+            line-height: 1.4;
+            border: 1px solid #334155;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .tooltip-container:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        .migration-desc {
+            font-size: 13px;
+            color: #94a3b8;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+        .migration-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .migration-btn-reject {
+            flex: 1;
+            padding: 9px;
+            background: #141720;
+            border: 1px solid #2a2e3d;
+            color: #cbd5e1;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s;
+        }
+        .migration-btn-reject:hover {
+            background: #2a2e3d;
+            color: #fff;
+        }
+        .migration-btn-accept {
+            flex: 1;
+            padding: 9px;
+            background: #5865F2; /* Kolor Discorda */
+            border: none;
+            color: white;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s;
+        }
+        .migration-btn-accept:hover {
+            background: #4752C4;
         }
 
         /* --- USUNIĘCIE BIAŁYCH RAMKI I STRZAŁKI W LEAFLET --- */
@@ -250,26 +375,6 @@
         .popup-box input:focus {
             border-color: #00b894;
         }
-        .popup-box button {
-            width: 100%;
-            padding: 8px;
-            background: #00b894;
-            border: none;
-            color: white;
-            font-weight: bold;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-        .popup-box button:hover { background: #019875; }
-        .copy-info {
-            color: #00b894;
-            font-size: 11px;
-            text-align: center;
-            margin-top: 6px;
-            display: none;
-            font-weight: bold;
-        }
         .popup-img {
             max-width: 100%;
             border-radius: 6px;
@@ -306,20 +411,13 @@
             display: none;
             position: fixed;
             z-index: 99999;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0; width: 100%; height: 100%;
             background-color: rgba(0, 0, 0, 0.85);
-            justify-content: center;
-            align-items: center;
+            justify-content: center; align-items: center;
             cursor: pointer;
         }
         #image-modal img {
-            max-width: 90%;
-            max-height: 90%;
-            border-radius: 8px;
-            border: 2px solid #2a2e3d;
+            max-width: 90%; max-height: 90%; border-radius: 8px; border: 2px solid #2a2e3d;
             box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
     </style>
@@ -329,6 +427,26 @@
 <!-- Licznik na górze -->
 <div id="counter-box">
     Zebranych znajdziek: <span id="collected-count">0</span>/<span id="total-count">0</span>
+</div>
+
+<!-- Modal migracyjny (ciemne tło) -->
+<div id="migration-overlay">
+    <div class="migration-modal">
+        <div class="migration-header">
+            <h3 class="migration-title">Synchronizacja postępu</h3>
+            <div class="tooltip-container">
+                <div class="tooltip-icon">?</div>
+                <div class="tooltip-text">Migracja i zapis w chmurze pozwoli na zapisanie stanów znajdziek na koncie discord, dzięki czemu nie utracisz postępu w przypadku zmiany przeglądarki czy urządzenia. Migracja trwa kilka sekund i nie wymaga działania z twojej strony.</div>
+            </div>
+        </div>
+        <div class="migration-desc">
+            Nie posiadasz synchronizowanych znajdziek z kontem Discord, czy chcesz teraz wykonać migrację?
+        </div>
+        <div class="migration-buttons">
+            <button class="migration-btn-reject" onclick="odrzucMigracje()">Odrzuć</button>
+            <button class="migration-btn-accept" onclick="wykonajMigracje()">Migruj</button>
+        </div>
+    </div>
 </div>
 
 <!-- Modal do pełnego ekranu obrazka -->
@@ -362,17 +480,15 @@
         <button id="reset-progress-btn" class="user-action-btn" style="background: #334155; font-size: 12px;">Zresetuj lokacje</button>
     </div>
 
-    <!-- Wybór eventów (przyszłościowy) -->
+    <!-- Wybór eventów (uniwersalny system parametrów URL) -->
     <div class="menu-section">
         <h4>Wybierz event</h4>
-        <div style="font-size: 13px; color: #00b894; padding: 6px 0; background: #141720; text-align: center; border-radius: 6px; border: 1px solid #00b894; font-weight: bold; margin-bottom: 8px;">
-            🎃 Dynie Halloween 2026
-        </div>
-        <a href="fabula.html" class="back-btn" style="margin-bottom: 8px; text-decoration: none;">📖 Fabuła Halloween 2026</a>
-        <a href="cukierki.html" class="back-btn" style="text-decoration: none;">🍬 Cukierki (NPC) 2026</a>
+        <a href="map.html?event=dynie2026&json=H2026.json" class="event-btn" id="btn-dynie">🎃 Dynie Halloween 2026</a>
+        <a href="map.html?event=cukierki2026&json=CUKIERKI.json" class="event-btn" id="btn-cukierki">🍬 Cukierki (NPC) 2026</a>
+        <a href="fabula.html" class="event-btn" style="text-decoration: none;">📖 Fabuła Halloween 2026</a>
     </div>
 
-    <!-- Panel Administratora / Dodawania punktów -->
+    <!-- Panel Administratora -->
     <div class="menu-section admin-box">
         <h4>Panel Administratora</h4>
         <div id="admin-login-view">
@@ -386,7 +502,7 @@
         </div>
     </div>
 
-    <!-- Regulamin / Nota informacyjna -->
+    <!-- Nota informacyjna -->
     <div class="menu-section" style="font-size: 10px; color: #64748b; line-height: 1.3; text-align: justify; border-bottom: none; margin-bottom: 0; padding-bottom: 0;">
         <b>Nota informacyjna:</b> Narzędzie wyłącznie do użytku wewnętrznego organizacji Chrabstwo. Mapa ma charakter pomocniczy, zakaz handlu i dystrybucji komercyjnej. Autor projektu nie ponosi żadnej odpowiedzialności za dalsze udostępnianie mapy osobom trzecim. Zgodnie z wytycznymi serwera.
     </div>
@@ -396,6 +512,20 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+    // --- OBSŁUGA PARAMETRÓW URL (AUTOMATYZACJA EVENTÓW) ---
+    const urlParams = new URLSearchParams(window.location.search);
+    const EVENT_NAME = urlParams.get('event') || 'dynie2026';
+    const JSON_FILE = urlParams.get('json') || 'H2026.json';
+
+    // Podświetlenie aktywnego eventu w menu
+    if (EVENT_NAME.includes('cukierki')) {
+        const btn = document.getElementById('btn-cukierki');
+        if (btn) btn.classList.add('active');
+    } else {
+        const btn = document.getElementById('btn-dynie');
+        if (btn) btn.classList.add('active');
+    }
+
     const sidebar = document.getElementById("sidebar");
 
     function przelaczMinimalizacje(event) {
@@ -422,30 +552,97 @@
         }
     }
 
-    // Przywrócenie stanu zminimalizowanego przy odświeżeniu strony
     if (localStorage.getItem("sidebar_minimized") === "true") {
         sidebar.classList.add("minimized");
     }
 
     const HASLO_ADMINA = "admin2026"; 
-
     let czyAdmin = sessionStorage.getItem("admin_zalogowany") === "true";
-    let zebraneDynie = JSON.parse(localStorage.getItem("chrabstwo_zebrane_dynie") || "[]");
-    let ukryjZebrane = localStorage.getItem("chrabstwo_ukryj_zebrane") === "true";
+    let zebraneDynie = [];
+    let ukryjZebrane = localStorage.getItem(`chrabstwo_ukryj_zebrane_${EVENT_NAME}`) === "true";
 
     const hideCollectedChk = document.getElementById("hide-collected-chk");
     hideCollectedChk.checked = ukryjZebrane;
 
     hideCollectedChk.addEventListener("change", (e) => {
         ukryjZebrane = e.target.checked;
-        localStorage.setItem("chrabstwo_ukryj_zebrane", ukryjZebrane);
+        localStorage.setItem(`chrabstwo_ukryj_zebrane_${EVENT_NAME}`, ukryjZebrane);
         odswiezMarkeryNaMapie();
     });
 
-    document.getElementById("reset-progress-btn").addEventListener("click", () => {
-        if (confirm("Czy na pewno chcesz zresetować postęp wszystkich zebranych dyń?")) {
+    // --- INTEGRACJA Z KV (MIGRACJA ORAZ POBIERANIE) ---
+    async function zainicjalizujPostep() {
+        try {
+            const res = await fetch(`/members/event/${EVENT_NAME}/read?discordId=${discordUserId}`);
+            const data = await res.json();
+
+            if (data.exists) {
+                // Użytkownik posiada już zapis w chmurze
+                zebraneDynie = data.items || [];
+                uruchomMapę();
+            } else {
+                // Brak zapisu w KV – sprawdź czy ma stare dane w localStorage do migracji
+                const lokalneStare = JSON.parse(localStorage.getItem(`chrabstwo_zebrane_dynie_${EVENT_NAME}`) || localStorage.getItem("chrabstwo_zebrane_dynie") || "[]");
+                
+                if (lokalneStare.length > 0) {
+                    // Pokaż modal z pytaniem o migrację
+                    document.getElementById("migration-overlay").style.display = "flex";
+                } else {
+                    // Brak lokalnych danych i brak w KV -> stwórz pusty wpis w chmurze
+                    await wykonajMigrację(true);
+                }
+            }
+        } catch (e) {
+            console.error("Błąd komunikacji z KV, używam trybu awaryjnego localStorage:", e);
+            zebraneDynie = JSON.parse(localStorage.getItem(`chrabstwo_zebrane_dynie_${EVENT_NAME}`) || "[]");
+            uruchomMapę();
+        }
+    }
+
+    window.wykonajMigracje = async function(pusty = false) {
+        let itemsToMigrate = [];
+        if (!pusty) {
+            itemsToMigrate = JSON.parse(localStorage.getItem(`chrabstwo_zebrane_dynie_${EVENT_NAME}`) || localStorage.getItem("chrabstwo_zebrane_dynie") || "[]");
+        }
+
+        try {
+            await fetch(`/members/event/${EVENT_NAME}/migrate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ discordId: discordUserId, items: itemsToMigrate })
+            });
+            zebraneDynie = itemsToMigrate;
+        } catch (e) {
+            console.error("Błąd migracji do chmury:", e);
+            zebraneDynie = itemsToMigrate;
+        }
+
+        document.getElementById("migration-overlay").style.display = "none";
+        uruchomMapę();
+    };
+
+    window.odrzucMigracje = function() {
+        // Jeśli użytkownik odrzuci, pobieramy to co ma lokalnie i zamykamy okno
+        zebraneDynie = JSON.parse(localStorage.getItem(`chrabstwo_zebrane_dynie_${EVENT_NAME}`) || localStorage.getItem("chrabstwo_zebrane_dynie") || "[]");
+        document.getElementById("migration-overlay").style.display = "none";
+        uruchomMapę();
+    };
+
+    document.getElementById("reset-progress-btn").addEventListener("click", async () => {
+        if (confirm("Czy na pewno chcesz zresetować postęp wszystkich zebranych punktów w tym evencie?")) {
             zebraneDynie = [];
-            localStorage.removeItem("chrabstwo_zebrane_dynie");
+            localStorage.removeItem(`chrabstwo_zebrane_dynie_${EVENT_NAME}`);
+            
+            try {
+                await fetch(`/members/event/${EVENT_NAME}/reset`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ discordId: discordUserId })
+                });
+            } catch(e) {
+                console.error("Błąd resetu w KV:", e);
+            }
+
             odswiezMarkeryNaMapie();
             aktualizujLicznik();
         }
@@ -488,7 +685,7 @@
         odswiezPanelAdmina();
     });
 
-    // --- USTAWIANIE GRANIC MAPY ---
+    // --- MAPA LEAFLET ---
     const imageBounds = [[0, 0], [2048, 2048]]; 
     const cameraBounds = [[-300, -300], [2348, 2348]]; 
 
@@ -507,7 +704,6 @@
     let warstwyMarkerow = [];
     let tymczasowyCelownik = null;
 
-    // Funkcje powiększania zdjęcia
     window.pokazZdjecie = function(url) {
         const modal = document.getElementById("image-modal");
         const modalImg = document.getElementById("modal-img");
@@ -519,7 +715,6 @@
         document.getElementById("image-modal").style.display = "none";
     };
 
-    // Ikona pinezki standardowej
     function stwórzIkonę(jestZebrana) {
         const kolor = jestZebrana ? "#00b894" : "#ff5252";
         const pinSvg = `
@@ -536,14 +731,10 @@
         });
     }
 
-    // Ikona celownika "X" dla admina
     function stwórzCelownikX() {
-        const crosshairSvg = `
-            <div style="font-size: 26px; font-weight: bold; color: #ff5252; text-shadow: 0 0 4px #000, 0 0 4px #000; text-align: center; line-height: 24px; width: 24px; height: 24px;">✕</div>
-        `;
         return L.divIcon({
             className: 'admin-crosshair',
-            html: crosshairSvg,
+            html: '<div style="font-size: 26px; font-weight: bold; color: #ff5252; text-shadow: 0 0 4px #000, 0 0 4px #000; text-align: center; line-height: 24px; width: 24px; height: 24px;">✕</div>',
             iconSize: [24, 24],
             iconAnchor: [12, 12]
         });
@@ -554,17 +745,33 @@
         document.getElementById("total-count").innerText = wszystkieDynieDane.length;
     }
 
-    window.przelaczStanDyni = function(identyfikatorDyni) {
+    window.przelaczStanDyni = async function(identyfikatorDyni) {
         const index = zebraneDynie.indexOf(identyfikatorDyni);
+        let akcjaType = "";
+
         if (index > -1) {
             zebraneDynie.splice(index, 1);
+            akcjaType = "remove";
         } else {
             zebraneDynie.push(identyfikatorDyni);
+            akcjaType = "add";
         }
-        localStorage.setItem("chrabstwo_zebrane_dynie", JSON.stringify(zebraneDynie));
+
+        // Zapis lokalny i w chmurze
+        localStorage.setItem(`chrabstwo_zebrane_dynie_${EVENT_NAME}`, JSON.stringify(zebraneDynie));
         aktualizujLicznik();
         odswiezMarkeryNaMapie();
         map.closePopup();
+
+        try {
+            await fetch(`/members/event/${EVENT_NAME}/write`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ discordId: discordUserId, itemId: identyfikatorDyni, actionType: akcjaType })
+            });
+        } catch (e) {
+            console.error("Błąd synchronizacji statusu z KV:", e);
+        }
     };
 
     function odswiezMarkeryNaMapie() {
@@ -583,13 +790,15 @@
 
             const przyciskTekst = jestZebrana ? "Oznacz jako niezebrane" : "✓ Zebrane";
             const przyciskKlasa = jestZebrana ? "collected-btn uncollect" : "collected-btn";
-            const numerDyni = dynia.id ? `Dynia #${dynia.id}` : "Dynia organizacyjna";
+            const numerDyni = dynia.id ? `Punkt #${dynia.id}` : "Punkt organizacyjny";
+
+            const obrazekHtml = dynia.img ? `<img src="${dynia.img}" class="popup-img" alt="Screen" onclick="pokazZdjecie('${dynia.img}')" onerror="this.style.display='none'" title="Kliknij, aby powiększyć">` : '';
 
             const popupContent = `
                 <div class="popup-box">
                     <b style="font-size: 13px; color: #f8fafc;">${numerDyni}</b><br>
                     <div style="font-size: 11px; color: #94a3b8; margin: 2px 0 6px 0;">Współrzędne: Y: <b>${dynia.y}</b>, X: <b>${dynia.x}</b></div>
-                    <img src="${dynia.img}" class="popup-img" alt="Screen dyni" onclick="pokazZdjecie('${dynia.img}')" onerror="this.style.display='none'" title="Kliknij, aby powiększyć">
+                    ${obrazekHtml}
                     <button class="${przyciskKlasa}" onclick="przelaczStanDyni('${identyfikatorDyni}')">${przyciskTekst}</button>
                 </div>
             `;
@@ -600,32 +809,26 @@
         });
     }
 
-    fetch('H2026.json')
-        .then(response => response.json())
-        .then(dynie => {
-            wszystkieDynieDane = dynie;
+    function uruchomMapę() {
+        fetch(JSON_FILE)
+            .then(response => response.json())
+            .then(dynie => {
+                wszystkieDynieDane = dynie;
+                aktualizujLicznik();
+                odswiezMarkeryNaMapie();
+            })
+            .catch(err => console.log('Błąd wczytywania danych z JSON:', err));
+    }
 
-            zebraneDynie = zebraneDynie.map(item => {
-                if (typeof item === 'string' && item.includes('_')) {
-                    const [yStr, xStr] = item.split('_');
-                    const znaleziona = dynie.find(d => Math.round(d.y) === parseInt(yStr) && Math.round(d.x) === parseInt(xStr));
-                    return znaleziona ? String(znaleziona.id) : null;
-                }
-                return String(item);
-            }).filter((item, index, self) => item !== null && self.indexOf(item) === index);
-            localStorage.setItem("chrabstwo_zebrane_dynie", JSON.stringify(zebraneDynie));
-
-            aktualizujLicznik();
-            odswiezMarkeryNaMapie();
-        })
-        .catch(err => console.log('Błąd wczytywania dyń z H2026.json:', err));
+    // Uruchomienie skryptu po załadowaniu strony
+    zainicjalizujPostep();
 
     window.copyJsonLine = function(y, x) {
         const idInput = document.getElementById('item-id');
         const urlInput = document.getElementById('img-url');
         
         const idVal = idInput ? idInput.value.trim() : "1";
-        const imgUrl = urlInput ? urlInput.value.trim() : "https://i.imgur.com/przyklad.png";
+        const imgUrl = urlInput ? urlInput.value.trim() : "";
         
         const jsonLine = `  {"id": ${idVal}, "y": ${y}, "x": ${x}, "img": "${imgUrl}"},`;
 
@@ -660,7 +863,7 @@
                 <label style="font-size: 11px; color: #cbd5e1;">Numer znajdzki:</label>
                 <input type="number" id="item-id" placeholder="np. 1">
 
-                <label style="font-size: 11px; color: #cbd5e1;">URL do obrazka (np. Imgur):</label>
+                <label style="font-size: 11px; color: #cbd5e1;">URL do obrazka (opcjonalnie):</label>
                 <input type="text" id="img-url" placeholder="https://i.imgur.com/...">
                 
                 <button onclick="copyJsonLine(${y}, ${x})">KOPIUJ JSON</button>
