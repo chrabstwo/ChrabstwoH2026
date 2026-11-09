@@ -246,39 +246,81 @@
     btn.addEventListener("click", function() {
         if (!checkbox.checked) return;
         
-        // Uruchomienie animacji kropek na przycisku i zablokowanie kliknięć
         btn.disabled = true;
         btnContent.style.display = "none";
         btnLoader.style.display = "flex";
 
-        // Krótkie opóźnienie (np. 300ms) dla płynnego efektu animacji przed przekierowaniem
         setTimeout(() => {
             const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=identify`;
             window.location.href = discordAuthUrl;
         }, 300);
     });
 
-    function zweryfikujIWejdz(userId) {
+    // Funkcja wykonująca automatyczną migrację/zapis pustej chmury z lokalnych cookies
+    async function synchronizujPustaChmureW3Tle(userId) {
+        const eventyDoSprawdzenia = ['dynie2026', 'cukierki2026'];
+        
+        for (const ev of eventyDoSprawdzenia) {
+            try {
+                // Sprawdzamy stan chmury dla eventu
+                const res = await fetch(`${WORKER_URL}/members/event/${ev}/read?discordId=${userId}`);
+                const data = await res.json();
+
+                // Jeśli w chmurze jest pusto (nie ma jeszcze danych dla tego usera)
+                if (!data.exists || !data.items || data.items.length === 0) {
+                    // Pobieramy dane z localStorage (cookies)
+                    const localKey = `chrabstwo_zebrane_${ev}`;
+                    let lokalneDane = JSON.parse(localStorage.getItem(localKey) || "[]");
+                    
+                    // Fallback na stare klucze jeśli nowe są puste
+                    if (lokalneDane.length === 0) {
+                        if (ev === 'dynie2026') {
+                            lokalneDane = JSON.parse(localStorage.getItem('chrabstwo_zebrane_dynie_dynie2026') || localStorage.getItem('chrabstwo_zebrane_dynie') || "[]");
+                        } else if (ev === 'cukierki2026') {
+                            lokalneDane = JSON.parse(localStorage.getItem('chrabstwo_zebrane_dynie_cukierki2026') || "[]");
+                        }
+                    }
+
+                    // Jeśli lokalnie mamy jakiekolwiek postępy, wysyłamy je automatycznie do chmury w tle
+                    if (lokalneDane.length > 0) {
+                        await fetch(`${WORKER_URL}/members/event/${ev}/migrate`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ discordId: userId, items: lokalneDane })
+                        });
+                    }
+                }
+            } catch (e) {
+                console.error(`Błąd automatycznej synchronizacji chmury dla ${ev}:`, e);
+            }
+        }
+    }
+
+    async function zweryfikujIWejdz(userId) {
         loaderText.innerText = "Weryfikacja uprawnień członka organizacji...";
 
-        fetch(`${WORKER_URL}/members/read?userId=${userId}`)
-            .then(res => res.json())
-            .then(data => {
-                if (data.allowed) {
-                    const zaGodzine = new Date().getTime() + (60 * 60 * 1000);
-                    localStorage.setItem("login_wygasa", zaGodzine);
+        try {
+            const res = await fetch(`${WORKER_URL}/members/read?userId=${userId}`);
+            const data = await res.json();
 
-                    loaderText.innerText = "Zalogowano pomyślnie! Ładowanie mapy...";
-                    setTimeout(() => {
-                        window.location.href = "map.html";
-                    }, 1000);
-                } else {
-                    wylogujIBlad("Odmowa dostępu: Twoje konto nie posiada wymaganej rangi 'Członek org' na serwerze Discord.");
-                }
-            })
-            .catch(err => {
-                wylogujIBlad("Błąd połączenia z serwerem weryfikacji.");
-            });
+            if (data.allowed) {
+                const zaGodzine = new Date().getTime() + (60 * 60 * 1000);
+                localStorage.setItem("login_wygasa", zaGodzine);
+
+                // Automatyczne uzupełnienie chmury z lokalnych cookies, jeśli chmura jest pusta
+                loaderText.innerText = "Synchronizowanie postępów z chmurą...";
+                await synchronizujPustaChmureW3Tle(userId);
+
+                loaderText.innerText = "Zalogowano pomyślnie! Ładowanie mapy...";
+                setTimeout(() => {
+                    window.location.href = "map.html";
+                }, 1000);
+            } else {
+                wylogujIBlad("Odmowa dostępu: Twoje konto nie posiada wymaganej rangi 'Członek org' na serwerze Discord.");
+            }
+        } catch (err) {
+            wylogujIBlad("Błąd połączenia z serwerem weryfikacji.");
+        }
     }
 
     function pokażLoader(tekst) {
