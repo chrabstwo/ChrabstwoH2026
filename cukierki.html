@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chrabstwo 4Life - Cukierki</title>
     
-    <!-- Sprawdzenie sesji ogólnego dostępu (1 godzina) -->
-<script>
+    <!-- Sprawdzenie sesji oraz weryfikacja logowania przez Discorda -->
+    <script>
         const discordUserId = localStorage.getItem("discord_user_id");
         const wygasniecie = localStorage.getItem("login_wygasa");
         const teraz = new Date().getTime();
@@ -30,33 +30,51 @@
             overflow: hidden;
         }
         
-        /* Licznik na górze po środku */
-        #counter-box {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #1e222d;
-            border: 1px solid #2a2e3d;
-            border-radius: 10px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
-            z-index: 1000;
-            font-family: sans-serif;
-            color: #e2e8f0;
-            padding: 10px 20px;
-            font-size: 14px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            text-align: center;
+        /* --- STYL NAGŁÓWKA SIDEBARU Z PRZYCISKAMI --- */
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
         }
-        #counter-box span.green {
+        .sidebar-header h2 {
+            font-size: 15px;
+            margin: 0;
             color: #00b894;
+            font-weight: 600;
         }
-        #counter-box span.red {
-            color: #ff5252;
+        .window-controls {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .win-btn {
+            background: #141720;
+            border: 1px solid #2a2e3d;
+            color: #cbd5e1;
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.2s ease;
+            padding: 0;
+        }
+        .win-btn:hover {
+            background: #2a2e3d;
+            color: white;
+            border-color: #00b894;
+        }
+        .win-btn.logout-btn:hover {
+            border-color: #ef4444;
+            color: #ef4444;
         }
 
-        /* Styl mini menu w lewym dolnym rogu (szerokość 260px 1:1 z map.html) */
+        /* --- ANIMACJA I STYL MINIMALIZACJI SIDEBARU --- */
         #sidebar {
             position: fixed;
             bottom: 20px;
@@ -71,16 +89,34 @@
             color: #e2e8f0;
             padding: 16px;
             box-sizing: border-box;
-            max-height: 85vh;
-            overflow-y: auto;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: bottom left;
+            overflow: hidden;
         }
-        #sidebar h2 {
-            font-size: 15px;
-            margin: 0 0 12px 0;
+        #sidebar.minimized {
+            width: 220px;
+            height: 48px;
+            padding: 8px 12px;
+            background: #1e222d;
+            border-color: #00b894;
+            box-shadow: 0 4px 16px rgba(0,184,148,0.2);
+            cursor: pointer;
+        }
+        #sidebar.minimized .menu-section {
+            display: none !important;
+        }
+        #sidebar.minimized .sidebar-header {
+            margin-bottom: 0;
+            height: 100%;
+        }
+        #sidebar.minimized .sidebar-header h2 {
+            font-size: 13px;
             color: #00b894;
-            text-align: center;
-            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
+
         .menu-section {
             margin-bottom: 14px;
             border-bottom: 1px solid #2a2e3d;
@@ -98,8 +134,53 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        
-        /* Przyciski nawigacyjne między mapami */
+        .admin-box input, .admin-box textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px 10px;
+            margin-bottom: 8px;
+            background: #141720;
+            border: 1px solid #2a2e3d;
+            color: white;
+            border-radius: 6px;
+            font-size: 13px;
+            outline: none;
+            font-family: sans-serif;
+        }
+        .admin-box input:focus, .admin-box textarea:focus {
+            border-color: #00b894;
+        }
+        .admin-box select {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px 10px;
+            margin-bottom: 8px;
+            background: #141720;
+            border: 1px solid #2a2e3d;
+            color: white;
+            border-radius: 6px;
+            font-size: 13px;
+            outline: none;
+        }
+        .admin-box button {
+            width: 100%;
+            padding: 8px;
+            background: #00b894;
+            border: none;
+            color: white;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .admin-box button:hover { background: #019875; }
+        .admin-status {
+            font-size: 12px;
+            margin-top: 6px;
+            text-align: center;
+        }
+
+        /* Przyciski nawigacyjne */
         .back-btn {
             display: block;
             width: 100%;
@@ -114,81 +195,8 @@
             text-align: center;
             text-decoration: none;
             box-sizing: border-box;
-            margin-bottom: 8px;
         }
-        .back-btn:hover { 
-            background: #1e222d; 
-            border-color: #00b894; 
-        }
-
-        .admin-box input {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 8px 10px;
-            margin-bottom: 8px;
-            background: #141720;
-            border: 1px solid #2a2e3d;
-            color: white;
-            border-radius: 6px;
-            font-size: 13px;
-            outline: none;
-        }
-        .admin-box input:focus {
-            border-color: #00b894;
-        }
-        .admin-box button, .user-action-btn {
-            width: 100%;
-            padding: 8px;
-            background: #00b894;
-            border: none;
-            color: white;
-            font-weight: bold;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 13px;
-        }
-        .admin-box button:hover, .user-action-btn:hover { background: #019875; }
-        .admin-status {
-            font-size: 12px;
-            margin-top: 6px;
-            text-align: center;
-        }
-
-        /* Lista robocza dodanych lokacji w panelu admina (z ciemnym paskiem przewijania) */
-        #temp-list {
-            max-height: 120px;
-            overflow-y: auto;
-            background: #141720;
-            border: 1px solid #2a2e3d;
-            border-radius: 6px;
-            padding: 6px;
-            font-size: 11px;
-            margin-bottom: 8px;
-            color: #cbd5e1;
-            scrollbar-width: thin;
-            scrollbar-color: #2a2e3d #141720;
-        }
-        #temp-list::-webkit-scrollbar {
-            width: 6px;
-        }
-        #temp-list::-webkit-scrollbar-track {
-            background: #141720;
-            border-radius: 6px;
-        }
-        #temp-list::-webkit-scrollbar-thumb {
-            background-color: #2a2e3d;
-            border-radius: 6px;
-        }
-        .temp-item {
-            padding: 4px 0;
-            border-bottom: 1px dashed #2a2e3d;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .temp-item:last-child {
-            border-bottom: none;
-        }
+        .back-btn:hover { background: #1e222d; border-color: #00b894; }
 
         /* --- USUNIĘCIE BIAŁYCH RAMKI I STRZAŁKI W LEAFLET --- */
         .leaflet-popup-content-wrapper, .leaflet-popup-tip {
@@ -204,7 +212,7 @@
             display: none !important;
         }
 
-        /* Styl ciemnego okienka popup */
+        /* Styl ciemnego okienka popup dla cukierków */
         .popup-box {
             font-family: sans-serif;
             color: #e2e8f0;
@@ -215,7 +223,7 @@
             border: 1px solid #2a2e3d;
             box-shadow: 0 8px 24px rgba(0,0,0,0.7);
         }
-        .popup-box input {
+        .popup-box textarea {
             width: 100%;
             box-sizing: border-box;
             padding: 7px 10px;
@@ -226,13 +234,16 @@
             border-radius: 6px;
             font-size: 12px;
             outline: none;
+            resize: vertical;
+            font-family: sans-serif;
         }
-        .popup-box input:focus {
+        .popup-box textarea:focus {
             border-color: #00b894;
         }
         .popup-box button {
             width: 100%;
             padding: 8px;
+            background: #00b894;
             border: none;
             color: white;
             font-weight: bold;
@@ -240,43 +251,21 @@
             cursor: pointer;
             font-size: 12px;
         }
-
-        .popup-img {
-            max-width: 100%;
-            border-radius: 6px;
+        .popup-box button:hover { background: #019875; }
+        .copy-info {
+            color: #00b894;
+            font-size: 11px;
+            text-align: center;
+            margin-top: 6px;
+            display: none;
+            font-weight: bold;
+        }
+        .desc-text {
+            font-size: 12px;
+            color: #cbd5e1;
             margin: 8px 0;
-            display: block;
-            border: 1px solid #2a2e3d;
-            cursor: pointer;
-            transition: opacity 0.2s;
-        }
-        .popup-img:hover {
-            opacity: 0.8;
-        }
-
-        /* DEDYKOWANE KLASY PRZYCISKÓW */
-        .popup-box button.btn-green {
-            background-color: #00b894 !important;
-            margin-top: 6px;
-        }
-        .popup-box button.btn-green:hover {
-            background-color: #019875 !important;
-        }
-
-        .popup-box button.btn-red {
-            background-color: #ff5252 !important;
-            margin-top: 6px;
-        }
-        .popup-box button.btn-red:hover {
-            background-color: #dc2626 !important;
-        }
-        
-        .popup-box button.btn-darkgrey {
-            background-color: #334155 !important;
-            margin-top: 4px;
-        }
-        .popup-box button.btn-darkgrey:hover {
-            background-color: #475569 !important;
+            line-height: 1.4;
+            word-break: break-word;
         }
 
         /* --- MODAL DO POWIĘKSZANIA ZDJĘĆ --- */
@@ -291,47 +280,43 @@
         }
         #image-modal img {
             max-width: 90%; max-height: 90%; border-radius: 8px; border: 2px solid #2a2e3d;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
     </style>
 </head>
 <body>
 
-<!-- Licznik na górze po środku -->
-<div id="counter-box">
-    🍬 (<span class="red">Nie</span>)Odwiedzeni NPC: <span id="cnt-total" class="green">0</span>/<span id="cnt-unvisited" class="red">0</span>
-</div>
-
-<!-- Modal do powiększania zdjęć -->
+<!-- Modal -->
 <div id="image-modal" onclick="zamknijZdjecie()">
     <img id="modal-img" src="" alt="Powiększony screen">
 </div>
 
 <!-- Mini menu w lewym dolnym rogu -->
-<div id="sidebar">
-    <h2>Chrabstwo 4Life</h2>
-    
-    <!-- Postęp znajdziek (1:1 z map.html) -->
-    <div class="menu-section">
-        <h4>Postęp znajdziek</h4>
-        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; margin-bottom: 10px; color: #cbd5e1;">
-            <input type="checkbox" id="hide-collected-chk" style="accent-color: #00b894; width: 16px; height: 16px; cursor: pointer;">
-            <span>Ukryj zebrane</span>
-        </label>
-        <button id="reset-progress-btn" class="user-action-btn" style="background: #334155 !important; font-size: 12px;">Zresetuj lokacje</button>
+<div id="sidebar" onclick="rozwinJesliZminimalizowany(event)">
+    <div class="sidebar-header">
+        <h2>Chrabstwo 4Life</h2>
+        <div class="window-controls">
+            <button class="win-btn" onclick="przelaczMinimalizacje(event)" title="Zminimalizuj">_</button>
+            <button class="win-btn logout-btn" onclick="wylogujSie(event)" title="Wyloguj się">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+            </button>
+        </div>
     </div>
-
-    <!-- Wybór eventów -->
+    
+    <!-- Wybór eventu -->
     <div class="menu-section">
         <h4>Wybierz event</h4>
-        <a href="map.html" class="back-btn" style="text-decoration: none;">🎃 Dynie Halloween 2026</a>
-        <a href="fabula.html" class="back-btn" style="text-decoration: none;">📖 Fabuła Halloween 2026</a>
-        <div style="font-size: 13px; color: #00b894; padding: 6px 0; background: #141720; text-align: center; border-radius: 6px; border: 1px solid #00b894; font-weight: bold; margin-top: 8px;">
+        <a href="map.html" class="back-btn" style="margin-bottom: 8px; text-decoration: none;">🎃 Dynie Halloween 2026</a>
+        <a href="fabula.html" class="back-btn" style="margin-bottom: 8px; text-decoration: none;">📖 Fabuła Halloween 2026</a>
+        <div style="font-size: 13px; color: #00b894; padding: 6px 0; background: #141720; text-align: center; border-radius: 6px; border: 1px solid #00b894; font-weight: bold; margin-bottom: 8px;">
             🍬 Cukierki (NPC) 2026
         </div>
     </div>
 
-    <!-- Panel Administratora ze Szybką Listą -->
+    <!-- Panel Administratora / Dodawania punktów cukierków -->
     <div class="menu-section admin-box">
         <h4>Panel Administratora</h4>
         <div id="admin-login-view">
@@ -341,12 +326,7 @@
         </div>
         <div id="admin-logged-view" style="display: none;">
             <div class="admin-status" style="color: #00b894; font-weight: bold; margin-bottom: 6px;">✓ Tryb dodawania aktywny</div>
-            
-            <div style="font-size: 11px; color: #94a3b8; margin-bottom: 4px;">Robocza lista tej sesji:</div>
-            <div id="temp-list"><i>Brak nowych punktów</i></div>
-            
-            <button id="export-json-btn" style="background: #10b981 !important; margin-bottom: 6px;">📋 EKSPORTUJ CAŁY JSON</button>
-            <button id="admin-logout-btn" style="background: #ef4444 !important;">Zablokuj panel</button>
+            <button id="admin-logout-btn" style="background: #ef4444;">Zablokuj panel</button>
         </div>
     </div>
 
@@ -360,27 +340,40 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    const HASLO_ADMINA = "admin2026"; 
-    let czyAdmin = sessionStorage.getItem("admin_zalogowany") === "true";
-    let ukryjZebrane = localStorage.getItem("chrabstwo_ukryj_zebrane") === "true";
+    const sidebar = document.getElementById("sidebar");
 
-    const hideCollectedChk = document.getElementById("hide-collected-chk");
-    hideCollectedChk.checked = ukryjZebrane;
+    function przelaczMinimalizacje(event) {
+        event.stopPropagation();
+        sidebar.classList.toggle("minimized");
+        localStorage.setItem("sidebar_minimized_cukierki", sidebar.classList.contains("minimized"));
+    }
 
-    hideCollectedChk.addEventListener("change", (e) => {
-        ukryjZebrane = e.target.checked;
-        localStorage.setItem("chrabstwo_ukryj_zebrane", ukryjZebrane);
-        odswiezMarkeryNaMapie();
-    });
-
-    document.getElementById("reset-progress-btn").addEventListener("click", () => {
-        if (confirm("Czy na pewno chcesz zresetować postęp wszystkich zebranych i ukrytych lokacji?")) {
-            localStorage.removeItem("chrabstwo_stany_cukierkow");
-            stanyCukierkow = {};
-            odswiezMarkeryNaMapie();
-            aktualizujLicznik();
+    function rozwinJesliZminimalizowany(event) {
+        if (sidebar.classList.contains("minimized")) {
+            sidebar.classList.remove("minimized");
+            localStorage.setItem("sidebar_minimized_cukierki", "false");
         }
-    });
+    }
+
+    function wylogujSie(event) {
+        event.stopPropagation();
+        if (confirm("Czy na pewno chcesz się wylogować?")) {
+            localStorage.removeItem("discord_user_id");
+            localStorage.removeItem("discord_access_token");
+            localStorage.removeItem("login_wygasa");
+            sessionStorage.removeItem("admin_zalogowany_cukierki");
+            window.location.href = "login.html";
+        }
+    }
+
+    // Przywrócenie stanu zminimalizowanego przy odświeżeniu strony
+    if (localStorage.getItem("sidebar_minimized_cukierki") === "true") {
+        sidebar.classList.add("minimized");
+    }
+
+    const HASLO_ADMINA = "admin2026"; 
+
+    let czyAdmin = sessionStorage.getItem("admin_zalogowany_cukierki") === "true";
 
     const adminLoginView = document.getElementById("admin-login-view");
     const adminLoggedView = document.getElementById("admin-logged-view");
@@ -388,9 +381,6 @@
     const adminLoginBtn = document.getElementById("admin-login-btn");
     const adminLogoutBtn = document.getElementById("admin-logout-btn");
     const adminErr = document.getElementById("admin-err");
-    const tempListEl = document.getElementById("temp-list");
-
-    let koszykPunktów = []; 
 
     function odswiezPanelAdmina() {
         if (czyAdmin) {
@@ -406,11 +396,10 @@
     adminLoginBtn.addEventListener("click", () => {
         if (adminPassInput.value === HASLO_ADMINA) {
             czyAdmin = true;
-            sessionStorage.setItem("admin_zalogowany", "true");
+            sessionStorage.setItem("admin_zalogowany_cukierki", "true");
             adminErr.style.display = "none";
             adminPassInput.value = "";
             odswiezPanelAdmina();
-            odswiezMarkeryNaMapie();
         } else {
             adminErr.style.display = "block";
         }
@@ -418,9 +407,8 @@
 
     adminLogoutBtn.addEventListener("click", () => {
         czyAdmin = false;
-        sessionStorage.removeItem("admin_zalogowany");
+        sessionStorage.removeItem("admin_zalogowany_cukierki");
         odswiezPanelAdmina();
-        odswiezMarkeryNaMapie();
     });
 
     // --- USTAWIANIE GRANIC MAPY ---
@@ -438,122 +426,52 @@
     L.imageOverlay('map_hq.jpg', imageBounds).addTo(map);
     map.fitBounds(imageBounds);
 
-    let wszystkieCukierki = [];
+    let wszystkieElementyCukierkow = [];
     let warstwyMarkerow = [];
     let tymczasowyCelownik = null;
 
-    let stanyCukierkow = JSON.parse(localStorage.getItem('chrabstwo_stany_cukierkow') || '{}');
-
-    window.pokazZdjecie = function(url) {
-        const modal = document.getElementById("image-modal");
-        const modalImg = document.getElementById("modal-img");
-        modalImg.src = url;
-        modal.style.display = "flex";
-    };
-
-    window.zamknijZdjecie = function() {
-        document.getElementById("image-modal").style.display = "none";
-    };
-
-    // Ikona wektorowa (Google Pin)
-    function stwórzIkonęPinezki(stan, czyWKoszyku = false) {
-        let kolor = '#ff5252'; // Domyślnie czerwony (niezebrane)
-        let przezroczystosc = '1';
-
-        if (czyWKoszyku) {
-            kolor = '#3b82f6'; // Niebieski dla nowych/edytowanych punktów
-        } else if (stan === 'mam') {
-            kolor = '#00b894'; // Zielony (zebrane)
-        } else if (stan === 'brak') {
-            kolor = '#334155'; // Ciemnoszary (nie mam)
-            przezroczystosc = '0.25'; // 25% przezroczystości
+    // Definicje wektorowych ikonek SVG dla typów NPC / cukierków
+    function pobierzStylTypu(typ) {
+        switch(typ) {
+            case 'npc_cukierki': 
+                return { 
+                    nazwa: '🍬 NPC z cukierkami',
+                    svg: `<div style="background:rgba(20,23,32,0.9); border-radius:50%; width:38px; height:38px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(0,0,0,0.7); border:2px solid #ec4899;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12.5c-.8 0-1.5.7-1.5 1.5s.7 1.5 1.5 1.5 1.5-.7 1.5-1.5-.7-1.5-1.5-1.5z"/><path d="M4.5 12.5c-.8 0-1.5.7-1.5 1.5s.7 1.5 1.5 1.5 1.5-.7 1.5-1.5-.7-1.5-1.5-1.5z"/><path d="M12 9.5c-2.5 0-4.5 1.5-4.5 3.5s2 3.5 4.5 3.5 4.5-1.5 4.5-3.5-2-3.5-4.5-3.5z"/><path d="M12 9.5V6m0 7v5"/></svg></div>`
+                };
+            default: 
+                return { 
+                    nazwa: '🍬 Punkt Cukierków',
+                    svg: `<div style="background:rgba(20,23,32,0.9); border-radius:50%; width:38px; height:38px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(0,0,0,0.7); border:2px solid #ec4899;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg></div>`
+                };
         }
-
-        const pinSvg = `
-            <svg width="30" height="42" viewBox="0 0 384 512" xmlns="http://www.w3.org/2000/svg" style="opacity: ${przezroczystosc};">
-                <path fill="${kolor}" stroke="#ffffff" stroke-width="20" d="M172.268 501.67C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0zM192 272c44.183 0 80-35.817 80-80s-35.817-80-80-80-80 35.817-80 80 35.817 80 80 80z"/>
-            </svg>
-        `;
-
-        return L.divIcon({
-            className: 'custom-google-pin',
-            html: pinSvg,
-            iconSize: [30, 42],
-            iconAnchor: [15, 42],
-            popupAnchor: [0, -38]
-        });
     }
 
-    function aktualizujLicznik() {
-        const calkowitaLiczba = wszystkieCukierki.length;
-        let zebraneCount = 0;
-        let sprawdzoneBrakCount = 0;
-        
-        Object.values(stanyCukierkow).forEach(v => {
-            if (v === 'mam') zebraneCount++;
-            if (v === 'brak') sprawdzoneBrakCount++;
+    function stwórzIkonęCukierkow(typ) {
+        const styl = pobierzStylTypu(typ);
+        return L.divIcon({
+            className: 'custom-vector-icon',
+            html: styl.svg,
+            iconSize: [38, 38],
+            iconAnchor: [19, 19],
+            popupAnchor: [0, -19]
         });
-
-        // Nieodwiedzeni to tylko ci, którzy nie mają statusu 'mam' ani 'brak'
-        const nieodwiedzeniCount = Math.max(0, calkowitaLiczba - (zebraneCount + sprawdzoneBrakCount));
-
-        document.getElementById('cnt-total').innerText = zebraneCount;
-        document.getElementById('cnt-unvisited').innerText = nieodwiedzeniCount;
     }
 
     function odswiezMarkeryNaMapie() {
         warstwyMarkerow.forEach(m => map.removeLayer(m));
         warstwyMarkerow = [];
 
-        const idsWKoszyku = koszykPunktów.map(p => Number(p.id));
-
-        // 1. Wyświetl markery z oficjalnej bazy
-        wszystkieCukierki.forEach((item) => {
-            const identyfikator = String(item.id);
-            const stan = stanyCukierkow[identyfikator] || 'nieznany';
-
-            if (ukryjZebrane && stan === 'mam') return;
-
-            const czyWKoszyku = idsWKoszyku.includes(Number(item.id));
-            const marker = L.marker([item.y, item.x], { icon: stwórzIkonęPinezki(stan, czyWKoszyku) });
-
-            const jestZebrana = (stan === 'mam');
-            const jestBrak = (stan === 'brak');
-
-            let buttonZebraneHtml = "";
-            if (jestZebrana) {
-                buttonZebraneHtml = `<button class="btn-red" onclick="przelaczStanCukierka('${identyfikator}', 'mam')">Oznacz jako niezebrane</button>`;
-            } else {
-                buttonZebraneHtml = `<button class="btn-green" onclick="przelaczStanCukierka('${identyfikator}', 'mam')">✓ Zebrane</button>`;
-            }
-
-            let buttonBrakHtml = "";
-            if (jestBrak) {
-                buttonBrakHtml = `<button class="btn-red" onclick="przelaczStanCukierka('${identyfikator}', 'brak')">Oznacz jako niezebrane</button>`;
-            } else {
-                buttonBrakHtml = `<button class="btn-darkgrey" onclick="przelaczStanCukierka('${identyfikator}', 'brak')">❌ Nie mam</button>`;
-            }
-
-            let adminEditHtml = "";
-            if (czyAdmin) {
-                adminEditHtml = `
-                    <div style="border-top: 1px dashed #2a2e3d; margin-top: 8px; padding-top: 6px;">
-                        <label style="font-size: 10px; color: #94a3b8;">Edytuj link Imgur:</label>
-                        <input type="text" id="edit-img-${item.id}" value="${item.img || ''}" placeholder="https://i.imgur.com/..." style="margin-bottom: 4px;">
-                        <button onclick="edytujIstniejacyPunkt(${item.id}, ${item.y}, ${item.x})" style="background: #3b82f6 !important; font-size: 11px; padding: 5px;">💾 Zaktualizuj w koszyku</button>
-                    </div>
-                `;
-            }
+        wszystkieElementyCukierkow.forEach((item) => {
+            const styl = pobierzStylTypu(item.type);
+            const marker = L.marker([item.y, item.x], {
+                icon: stwórzIkonęCukierkow(item.type)
+            });
 
             const popupContent = `
                 <div class="popup-box">
-                    <b style="font-size: 13px; color: #f8fafc;">🍬 Cukierki NPC #${item.id} ${czyWKoszyku ? '<span style="color:#3b82f6;">(Edytowany)</span>' : ''}</b><br>
+                    <b style="font-size: 13px; color: #f8fafc;">${styl.nazwa}</b><br>
                     <div style="font-size: 11px; color: #94a3b8; margin: 2px 0 6px 0;">Współrzędne: Y: <b>${item.y}</b>, X: <b>${item.x}</b></div>
-                    <img src="${item.img}" class="popup-img" alt="Screen lokalizacji" onclick="pokazZdjecie('${item.img}')" onerror="this.style.display='none'" title="Kliknij, aby powiększyć">
-                    
-                    ${buttonZebraneHtml}
-                    ${buttonBrakHtml}
-                    ${adminEditHtml}
+                    <div class="desc-text">${item.desc || 'Brak opisu.'}</div>
                 </div>
             `;
 
@@ -561,145 +479,36 @@
             marker.addTo(map);
             warstwyMarkerow.push(marker);
         });
-
-        // 2. Wyświetl całkowicie nowe markery dodane przez admina
-        koszykPunktów.forEach((item) => {
-            const czyNowy = !wszystkieCukierki.some(b => b.id === item.id);
-            if (czyNowy) {
-                const marker = L.marker([item.y, item.x], { icon: stwórzIkonęPinezki('nieznany', true) });
-                
-                const popupContent = `
-                    <div class="popup-box">
-                        <b style="font-size: 13px; color: #f8fafc;">🍬 Nowy punkt #${item.id}</b><br>
-                        <div style="font-size: 11px; color: #94a3b8; margin: 2px 0 6px 0;">Y: <b>${item.y}</b>, X: <b>${item.x}</b></div>
-                        <div style="font-size: 11px; color: #3b82f6; font-weight: bold;">Nowy punkt w koszyku sesji</div>
-                    </div>
-                `;
-                marker.bindPopup(popupContent);
-                marker.addTo(map);
-                warstwyMarkerow.push(marker);
-            }
-        });
-
-        aktualizujLicznik();
     }
 
-    window.przelaczStanCukierka = function(id, nowyStan) {
-        if (stanyCukierkow[id] === nowyStan) {
-            delete stanyCukierkow[id]; 
-        } else {
-            stanyCukierkow[id] = nowyStan;
-        }
-        localStorage.setItem('chrabstwo_stany_cukierkow', JSON.stringify(stanyCukierkow));
-        map.closePopup();
-        odswiezMarkeryNaMapie();
-    };
-
-    // Wczytanie bazy cukierków z pliku JSON
-    fetch('cukierki.json')
-        .then(res => res.json())
+    // Pobieranie punktów z pliku CUKIERKI.json
+    fetch('CUKIERKI.json')
+        .then(response => response.json())
         .then(dane => {
-            wszystkieCukierki = dane;
-
-            const dostepneId = dane.map(d => String(d.id));
-            let zmodyfikowano = false;
-            
-            Object.keys(stanyCukierkow).forEach(idZPamieci => {
-                if (!dostepneId.includes(idZPamieci)) {
-                    delete stanyCukierkow[idZPamieci];
-                    zmodyfikowano = true;
-                }
-            });
-
-            if (zmodyfikowano) {
-                localStorage.setItem('chrabstwo_stany_cukierkow', JSON.stringify(stanyCukierkow));
-            }
-
+            wszystkieElementyCukierkow = dane;
             odswiezMarkeryNaMapie();
         })
-        .catch(err => console.log('Błąd wczytywania cukierki.json:', err));
+        .catch(err => console.log('Błąd wczytywania CUKIERKI.json:', err));
 
-    window.dodajDoListy = function(y, x) {
-        const urlInput = document.getElementById('img-url');
-        const imgUrl = urlInput ? urlInput.value.trim() : "";
+    window.copyJsonLine = function(y, x) {
+        const typeSelect = document.getElementById('item-type');
+        const descInput = document.getElementById('item-desc');
         
-        const nextId = wszystkieCukierki.length + koszykPunktów.filter(p => !wszystkieCukierki.some(b => b.id === p.id)).length + 1;
+        const typeVal = typeSelect ? typeSelect.value : "npc_cukierki";
+        const descVal = descInput ? descInput.value.trim() : "Opis NPC...";
+        
+        const jsonLine = `  {"type": "${typeVal}", "y": ${y}, "x": ${x}, "desc": "${descVal}"},`;
 
-        const nowyObiekt = { id: nextId, y: y, x: x, img: imgUrl };
-        koszykPunktów.push(nowyObiekt);
-
-        odswiezPodgladKoszyka();
-        odswiezMarkeryNaMapie();
-        map.closePopup();
-    };
-
-    window.edytujIstniejacyPunkt = function(id, y, x) {
-        const inputEdit = document.getElementById(`edit-img-${id}`);
-        const nowyUrl = inputEdit ? inputEdit.value.trim() : "";
-
-        const istniejacyIndex = koszykPunktów.findIndex(p => p.id === id);
-        const zaktualizowanyObiekt = { id: id, y: y, x: x, img: nowyUrl };
-
-        if (istniejacyIndex !== -1) {
-            koszykPunktów[istniejacyIndex] = zaktualizowanyObiekt;
-        } else {
-            koszykPunktów.push(zaktualizowanyObiekt);
-        }
-
-        const idxBaza = wszystkieCukierki.findIndex(p => p.id === id);
-        if (idxBaza !== -1) {
-            wszystkieCukierki[idxBaza].img = nowyUrl;
-        }
-
-        odswiezPodgladKoszyka();
-        odswiezMarkeryNaMapie();
-        map.closePopup();
-    };
-
-    function odswiezPodgladKoszyka() {
-        if (koszykPunktów.length === 0) {
-            tempListEl.innerHTML = '<i>Brak nowych punktów</i>';
-            return;
-        }
-        tempListEl.innerHTML = koszykPunktów.map((p, idx) => `
-            <div class="temp-item">
-                <span><b>#${p.id}</b> (${p.y}, ${p.x})</span>
-                <span style="color:#ef4444; cursor:pointer; font-weight:bold;" onclick="usunZKoszyka(${idx})" title="Usuń z listy">✕</span>
-            </div>
-        `).join('');
-    }
-
-    window.usunZKoszyka = function(idx) {
-        koszykPunktów.splice(idx, 1);
-        odswiezPodgladKoszyka();
-        odswiezMarkeryNaMapie();
-    };
-
-    document.getElementById('export-json-btn').addEventListener('click', () => {
-        if (koszykPunktów.length === 0) {
-            alert('Lista jest pusta! Dodaj lub edytuj najpierw punkty na mapie.');
-            return;
-        }
-
-        let bazaKopia = [...wszystkieCukierki];
-        koszykPunktów.forEach(kp => {
-            const index = bazaKopia.findIndex(b => b.id === kp.id);
-            if (index !== -1) {
-                bazaKopia[index] = kp; 
-            } else {
-                bazaKopia.push(kp); 
+        navigator.clipboard.writeText(jsonLine).then(() => {
+            const info = document.getElementById('copy-msg');
+            if (info) {
+                info.style.display = 'block';
+                setTimeout(() => { info.style.display = 'none'; }, 2500);
             }
         });
-        
-        bazaKopia.sort((a, b) => a.id - b.id);
+    };
 
-        const polaczonyJSON = JSON.stringify(bazaKopia, null, 2);
-        
-        navigator.clipboard.writeText(polaczonyJSON).then(() => {
-            alert(`Pomyślnie wyeksportowano ${koszykPunktów.length} zmian/nowych punktów (cały zaktualizowany JSON) do schowka! Wklej go do pliku cukierki.json.`);
-        });
-    });
-
+    // Celownik admina
     function stwórzCelownikX() {
         return L.divIcon({
             className: 'admin-crosshair',
@@ -728,10 +537,16 @@
             <div class="popup-box">
                 <div style="font-size: 11px; color: #94a3b8; margin-bottom: 4px;">Współrzędne: Y: <b>${y}</b>, X: <b>${x}</b></div>
                 
-                <label style="font-size: 11px; color: #cbd5e1;">URL do obrazka (Imgur):</label>
-                <input type="text" id="img-url" placeholder="https://i.imgur.com/...">
+                <label style="font-size: 11px; color: #cbd5e1;">Typ obiektu:</label>
+                <select id="item-type">
+                    <option value="npc_cukierki">NPC z cukierkami</option>
+                </select>
+
+                <label style="font-size: 11px; color: #cbd5e1;">Krótki opis:</label>
+                <textarea id="item-desc" rows="2" placeholder="Wpisz opis..."></textarea>
                 
-                <button onclick="dodajDoListy(${y}, ${x})" class="btn-green" style="margin-top: 4px;">➕ DODAJ DO LISTY</button>
+                <button onclick="copyJsonLine(${y}, ${x})">KOPIUJ JSON</button>
+                <div id="copy-msg" class="copy-info">Skopiowano do schowka! ✓</div>
             </div>
         `;
 
