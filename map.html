@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chrabstwo 4Life</title>
     
-    <!-- Sprawdzenie sesji ogólnego dostępu (1 godzina) -->
-<script>
+    <!-- Sprawdzenie sesji oraz weryfikacja logowania przez Discorda -->
+    <script>
         const discordUserId = localStorage.getItem("discord_user_id");
         const wygasniecie = localStorage.getItem("login_wygasa");
         const teraz = new Date().getTime();
@@ -52,7 +52,51 @@
             color: #00b894;
         }
 
-        /* Styl mini menu w lewym dolnym rogu */
+        /* --- STYL NAGŁÓWKA SIDEBARU Z PRZYCISKAMI --- */
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .sidebar-header h2 {
+            font-size: 15px;
+            margin: 0;
+            color: #00b894;
+            font-weight: 600;
+        }
+        .window-controls {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .win-btn {
+            background: #141720;
+            border: 1px solid #2a2e3d;
+            color: #cbd5e1;
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.2s ease;
+            padding: 0;
+        }
+        .win-btn:hover {
+            background: #2a2e3d;
+            color: white;
+            border-color: #00b894;
+        }
+        .win-btn.logout-btn:hover {
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+
+        /* --- ANIMACJA I STYL MINIMALIZACJI SIDEBARU --- */
         #sidebar {
             position: fixed;
             bottom: 20px;
@@ -67,14 +111,34 @@
             color: #e2e8f0;
             padding: 16px;
             box-sizing: border-box;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: bottom left;
+            overflow: hidden;
         }
-        #sidebar h2 {
-            font-size: 15px;
-            margin: 0 0 12px 0;
+        #sidebar.minimized {
+            width: 220px;
+            height: 48px;
+            padding: 8px 12px;
+            background: #1e222d;
+            border-color: #00b894;
+            box-shadow: 0 4px 16px rgba(0,184,148,0.2);
+            cursor: pointer;
+        }
+        #sidebar.minimized .menu-section {
+            display: none !important;
+        }
+        #sidebar.minimized .sidebar-header {
+            margin-bottom: 0;
+            height: 100%;
+        }
+        #sidebar.minimized .sidebar-header h2 {
+            font-size: 13px;
             color: #00b894;
-            text-align: center;
-            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
+
         .menu-section {
             margin-bottom: 14px;
             border-bottom: 1px solid #2a2e3d;
@@ -273,8 +337,20 @@
 </div>
 
 <!-- Mini menu w lewym dolnym rogu -->
-<div id="sidebar">
-    <h2>Chrabstwo 4Life</h2>
+<div id="sidebar" onclick="rozwinJesliZminimalizowany(event)">
+    <div class="sidebar-header">
+        <h2>Chrabstwo 4Life</h2>
+        <div class="window-controls">
+            <button class="win-btn" onclick="przelaczMinimalizacje(event)" title="Zminimalizuj">_</button>
+            <button class="win-btn logout-btn" onclick="wylogujSie(event)" title="Wyloguj się">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+            </button>
+        </div>
+    </div>
     
     <!-- Opcje użytkownika (ukrywanie i reset) -->
     <div class="menu-section">
@@ -320,6 +396,37 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+    const sidebar = document.getElementById("sidebar");
+
+    function przelaczMinimalizacje(event) {
+        event.stopPropagation();
+        sidebar.classList.toggle("minimized");
+        localStorage.setItem("sidebar_minimized", sidebar.classList.contains("minimized"));
+    }
+
+    function rozwinJesliZminimalizowany(event) {
+        if (sidebar.classList.contains("minimized")) {
+            sidebar.classList.remove("minimized");
+            localStorage.setItem("sidebar_minimized", "false");
+        }
+    }
+
+    function wylogujSie(event) {
+        event.stopPropagation();
+        if (confirm("Czy na pewno chcesz się wylogować?")) {
+            localStorage.removeItem("discord_user_id");
+            localStorage.removeItem("discord_access_token");
+            localStorage.removeItem("login_wygasa");
+            sessionStorage.removeItem("admin_zalogowany");
+            window.location.href = "login.html";
+        }
+    }
+
+    // Przywrócenie stanu zminimalizowanego przy odświeżeniu strony
+    if (localStorage.getItem("sidebar_minimized") === "true") {
+        sidebar.classList.add("minimized");
+    }
+
     const HASLO_ADMINA = "admin2026"; 
 
     let czyAdmin = sessionStorage.getItem("admin_zalogowany") === "true";
@@ -465,7 +572,6 @@
         warstwyMarkerow = [];
 
         wszystkieDynieDane.forEach((dynia) => {
-            // Używamy unikalnego ID dyni z JSON jako identyfikatora w pamięci
             const identyfikatorDyni = String(dynia.id);
             const jestZebrana = zebraneDynie.includes(identyfikatorDyni);
 
@@ -499,8 +605,6 @@
         .then(dynie => {
             wszystkieDynieDane = dynie;
 
-            // --- AUTOMATYCZNA NAPRAWA STARYCH WPISÓW W PAMIĘCI ---
-            // Konwertuje stare klucze oparte na współrzędnych (np. "475_1233") na numery ID z JSON
             zebraneDynie = zebraneDynie.map(item => {
                 if (typeof item === 'string' && item.includes('_')) {
                     const [yStr, xStr] = item.split('_');
@@ -508,9 +612,8 @@
                     return znaleziona ? String(znaleziona.id) : null;
                 }
                 return String(item);
-            }).filter((item, index, self) => item !== null && self.indexOf(item) === index); // usuwa duplikaty i puste
+            }).filter((item, index, self) => item !== null && self.indexOf(item) === index);
             localStorage.setItem("chrabstwo_zebrane_dynie", JSON.stringify(zebraneDynie));
-            // -----------------------------------------------------
 
             aktualizujLicznik();
             odswiezMarkeryNaMapie();
