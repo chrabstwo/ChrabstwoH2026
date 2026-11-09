@@ -62,7 +62,6 @@
             height: 16px;
         }
 
-        /* --- PRZYCISK I ANIMACJA W STYLU DISCORDA --- */
         .login-box button {
             width: 100%;
             padding: 12px;
@@ -108,7 +107,6 @@
             box-shadow: none;
         }
 
-        /* Styl spinnera z trzema kropkami (jak w Discordzie) */
         .button-loader {
             display: none;
             align-items: center;
@@ -160,7 +158,6 @@
 <body>
 
 <div id="login-overlay">
-    <!-- Widok logowania -->
     <div id="login-box-wrapper" class="login-box">
         <h3>Zaloguj się przez Discord, aby uzyskać dostęp do mapy organizacji</h3>
         
@@ -171,7 +168,6 @@
 
         <button id="login-btn" disabled>
             <span id="btn-content" style="display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%;">
-                <!-- Ikona SVG Discorda -->
                 <svg width="20" height="20" viewBox="0 0 127.14 96.36" fill="currentColor">
                     <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.79,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.81,11.1,105.25,105.25,0,0,0,32.25-16.15c2.62-27.28-4.51-51.2-19.26-72Zm-72,50.32c-6.08,0-11.08-5.6-11.08-12.5s5-12.5,11.08-12.5c6.11,0,11.11,5.6,11.08,12.5C46.78,52.79,41.8,58.39,35.7,58.39Zm55.76,0c-6.08,0-11.08-5.6-11.08-12.5s5-12.5,11.08-12.5c6.11,0,11.11,5.6,11.08,12.5C102.57,52.79,97.59,58.39,91.46,58.39Z"/>
                 </svg>
@@ -186,7 +182,6 @@
         <div id="error" class="error-msg"></div>
     </div>
 
-    <!-- Widok ładowania i weryfikacji -->
     <div id="loader-wrapper" class="loader-container">
         <div class="spinner"></div>
         <span id="loader-text">Wczytywanie i weryfikacja uprawnień...</span>
@@ -256,23 +251,19 @@
         }, 300);
     });
 
-    // Funkcja wykonująca automatyczną migrację/zapis pustej chmury z lokalnych cookies
+    // Funkcja migrująca puste chmury z lokalnych cookies/localStorage przy logowaniu
     async function synchronizujPustaChmureW3Tle(userId) {
         const eventyDoSprawdzenia = ['dynie2026', 'cukierki2026'];
         
         for (const ev of eventyDoSprawdzenia) {
             try {
-                // Sprawdzamy stan chmury dla eventu
                 const res = await fetch(`${WORKER_URL}/members/event/${ev}/read?discordId=${userId}`);
                 const data = await res.json();
 
-                // Jeśli w chmurze jest pusto (nie ma jeszcze danych dla tego usera)
                 if (!data.exists || !data.items || data.items.length === 0) {
-                    // Pobieramy dane z localStorage (cookies)
                     const localKey = `chrabstwo_zebrane_${ev}`;
                     let lokalneDane = JSON.parse(localStorage.getItem(localKey) || "[]");
                     
-                    // Fallback na stare klucze jeśli nowe są puste
                     if (lokalneDane.length === 0) {
                         if (ev === 'dynie2026') {
                             lokalneDane = JSON.parse(localStorage.getItem('chrabstwo_zebrane_dynie_dynie2026') || localStorage.getItem('chrabstwo_zebrane_dynie') || "[]");
@@ -281,7 +272,6 @@
                         }
                     }
 
-                    // Jeśli lokalnie mamy jakiekolwiek postępy, wysyłamy je automatycznie do chmury w tle
                     if (lokalneDane.length > 0) {
                         await fetch(`${WORKER_URL}/members/event/${ev}/migrate`, {
                             method: 'POST',
@@ -307,13 +297,12 @@
                 const zaGodzine = new Date().getTime() + (60 * 60 * 1000);
                 localStorage.setItem("login_wygasa", zaGodzine);
 
-                // Automatyczne uzupełnienie chmury z lokalnych cookies, jeśli chmura jest pusta
                 loaderText.innerText = "Synchronizowanie postępów z chmurą...";
                 await synchronizujPustaChmureW3Tle(userId);
 
                 loaderText.innerText = "Zalogowano pomyślnie! Ładowanie mapy...";
                 setTimeout(() => {
-                    window.location.href = "map.html";
+                    window.location.href = "map.html?event=dynie2026&json=dynie26.json";
                 }, 1000);
             } else {
                 wylogujIBlad("Odmowa dostępu: Twoje konto nie posiada wymaganej rangi 'Członek org' na serwerze Discord.");
