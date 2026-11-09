@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chrabstwo 4Life - Mapa Eventowa</title>
     
-    <!-- Automatyczne uzupełnienie domyślnych parametrów URL jeśli ich brak -->
     <script>
         if (!window.location.search.includes('event=')) {
             window.location.replace('map.html?event=dynie2026&json=dynie26.json');
@@ -22,7 +21,6 @@
             window.location.href = "login.html";
         }
 
-        // Reset koszyka zmian admina przy odświeżeniu (F5)
         if (performance.navigation.type === 1 || performance.getEntriesByType("navigation")[0]?.type === "reload") {
             const jsonFileCheck = new URLSearchParams(window.location.search).get('json') || 'dynie26.json';
             localStorage.removeItem(`chrabstwo_modyfikacje_${jsonFileCheck}`);
@@ -441,10 +439,12 @@
             border-radius: 6px;
             cursor: pointer;
             font-size: 12px;
-            margin-top: 8px;
+            margin-top: 6px;
             text-align: center;
         }
         .collected-btn.uncollect { background: #ef4444; }
+        .collected-btn.grey-btn { background: #334155; color: #cbd5e1; border: 1px solid #475569; }
+        .collected-btn.grey-btn:hover { background: #475569; }
 
         .marker-zebrany-cukierki {
             opacity: 0.25;
@@ -620,6 +620,9 @@
     const HASLO_ADMINA = "admin2026";
     let czyAdmin = sessionStorage.getItem("admin_zalogowany") === "true";
     let zebraneElementy = [];
+    // Obiekt do śledzenia statusu "✕ Nie mam" dla cukierków: klucz to ID punktu, wartość true/false
+    let statusNieMam = JSON.parse(localStorage.getItem(`chrabstwo_niemam_${EVENT_NAME}`) || "{}");
+    
     let ukryjZebrane = localStorage.getItem(`chrabstwo_ukryj_zebrane_${EVENT_NAME}`) === "true";
 
     const hideCollectedChk = document.getElementById("hide-collected-chk");
@@ -655,7 +658,6 @@
             const data = await res.json();
 
             if (!data.exists) {
-                // Jeśli brak wpisu w chmurze, tworzymy go na podstawie danych lokalnych
                 await wyslijDoChmury(lokalneDane, true);
                 zebraneElementy = lokalneDane;
                 uruchomMapę();
@@ -671,7 +673,6 @@
                     zebraneElementy = lokalneDane;
                     aktualizujStatusChmury(true, chmuraData);
                 } else {
-                    // Wykryto konflikt / niezgodność danych lokalnych i chmury
                     zebraneElementy = lokalneDane;
                     aktualizujStatusChmury(false, chmuraData, "Konflikt / Niezsynchronizowane");
                 }
@@ -750,7 +751,7 @@
                 localStorage.setItem(localMetaKey, new Date().toISOString());
                 aktualizujStatusChmury(true, new Date());
             } else {
-                aktualizujStatusChmury(false, null, "Błąd zapisu w chmurze");
+                aktualizujStatusChmury(false, nil, "Błąd zapisu w chmurze");
             }
         } catch(e) {
             aktualizujStatusChmury(false, null, "Tryb offline");
@@ -760,6 +761,8 @@
     document.getElementById("reset-progress-btn").addEventListener("click", async () => {
         if (confirm("Czy na pewno chcesz zresetować postęp w tym evencie?")) {
             zebraneElementy = [];
+            statusNieMam = {};
+            localStorage.removeItem(`chrabstwo_niemam_${EVENT_NAME}`);
             zapiszLokalne([]);
             try {
                 await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/reset`, {
@@ -823,11 +826,14 @@
     };
     window.zamknijZdjecie = () => { document.getElementById("image-modal").style.display = "none"; };
 
-    function stwórzIkonę(jestZebrana, jestZmodyfikowany) {
-        // Niezrobione dynie i cukierki mają ten sam jasnoczerwony/różowy kolor #ff5252
+    function stwórzIkonę(jestZebrana, jestZmodyfikowany, czyNieMam) {
         let kolor = jestZebrana ? "#00b894" : "#ff5252";
         if (isCukierki) {
-            kolor = jestZebrana ? "#6b7280" : "#ff5252"; 
+            if (czyNieMam) {
+                kolor = "#6b7280"; // szary dla "✕ Nie mam"
+            } else {
+                kolor = jestZebrana ? "#00b894" : "#ff5252"; 
+            }
         }
         if (jestZmodyfikowany) kolor = "#3b82f6";
 
@@ -837,8 +843,10 @@
             </svg>
         `;
         let klasaIkony = "custom-google-pin";
-        if (jestZebrana) {
-            klasaIkony += isCukierki ? " marker-zebrany-cukierki" : " marker-zebrany-dynie";
+        if (isCukierki && czyNieMam) {
+            klasaIkony += " marker-zebrany-cukierki";
+        } else if (jestZebrana) {
+            klasaIkony += isCukierki ? "" : " marker-zebrany-dynie";
         }
         return L.divIcon({ className: klasaIkony, html: pinSvg, iconSize: [30, 42], iconAnchor: [15, 42], popupAnchor: [0, -38] });
     }
@@ -848,29 +856,55 @@
         document.getElementById("total-count").innerText = wszystkieElementyDane.length;
     }
 
-    window.przelaczStanPunktu = async function(id) {
+    window.przelaczStanPunktu = async function(id, akcjaTyp) {
         const strId = String(id);
         const index = zebraneElementy.indexOf(strId);
-        let akcja = index > -1 ? "remove" : "add";
-        if (index > -1) zebraneElementy.splice(index, 1);
-        else zebraneElementy.push(strId);
+        let apiAkcja = "add";
 
-        zapiszLokalne(zebraneElementy);
+        if (akcjaTyp === 'niemam') {
+            statusNieMam[strId] = !statusNieMam[strId];
+            if (statusNieMam[strId] && index > -1) {
+                zebraneElementy.splice(index, 1);
+            }
+            localStorage.setItem(`chrabstwo_niemam_${EVENT_NAME}`, JSON.stringify(statusNieMam));
+            zapiszLokalne(zebraneElementy);
+        } else if (akcjaTyp === 'odwiedzony' || akcjaTyp === 'zebrane') {
+            statusNieMam[strId] = false;
+            localStorage.setItem(`chrabstwo_niemam_${EVENT_NAME}`, JSON.stringify(statusNieMam));
+            
+            if (index > -1) {
+                zebraneElementy.splice(index, 1);
+                apiAkcja = "remove";
+            } else {
+                zebraneElementy.push(strId);
+                apiAkcja = "add";
+            }
+            zapiszLokalne(zebraneElementy);
+        } else if (akcjaTyp === 'niezebrane') {
+            statusNieMam[strId] = false;
+            localStorage.setItem(`chrabstwo_niemam_${EVENT_NAME}`, JSON.stringify(statusNieMam));
+            
+            if (index > -1) {
+                zebraneElementy.splice(index, 1);
+                apiAkcja = "remove";
+            }
+            zapiszLokalne(zebraneElementy);
+        }
+
         aktualizujLicznik();
         odswiezMarkeryNaMapie();
         map.closePopup();
 
         try {
-            const response = await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/write`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ discordId: discordUserId, itemId: strId, actionType: akcja, updatedAt: new Date().toISOString() })
-            });
-            if (response.ok) {
-                aktualizujStatusChmury(true, new Date());
-            } else {
-                aktualizujStatusChmury(false, null, "Błąd zapisu w chmurze");
+            const response = await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/read`, { method: 'GET' }); // Lekki test lub zapis
+            if (akcjaTyp !== 'niemam') {
+                await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/write`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ discordId: discordUserId, itemId: strId, actionType: apiAkcja, updatedAt: new Date().toISOString() })
+                });
             }
+            aktualizujStatusChmury(true, new Date());
         } catch(e) {
             aktualizujStatusChmury(false, null, "Tryb offline");
         }
@@ -884,19 +918,39 @@
             const idVal = item.id || (index + 1);
             const strId = String(idVal);
             const jestZebrana = zebraneElementy.includes(strId);
+            const czyNieMam = !!statusNieMam[strId];
             const jestZmodyfikowany = !!modyfikowaneElementy[strId];
 
-            if (ukryjZebrane && jestZebrana) return;
+            if (ukryjZebrane && (jestZebrana || czyNieMam)) return;
 
-            const marker = L.marker([item.y, item.x], { icon: stwórzIkonę(jestZebrana, jestZmodyfikowany) });
+            const marker = L.marker([item.y, item.x], { icon: stwórzIkonę(jestZebrana, jestZmodyfikowany, czyNieMam) });
             
-            let btnText, btnClass;
+            let przyciskiHtml = '';
             if (isCukierki) {
-                btnText = jestZebrana ? "✕ Nie mam" : "✓ Odwiedzony NPC";
-                btnClass = jestZebrana ? "collected-btn uncollect" : "collected-btn";
+                if (czyNieMam) {
+                    // Gdy ma status "✕ Nie mam" (25% alpha): przyciski to "Odwiedzony NPC" oraz "Oznacz jako niezebrane"
+                    przyciskiHtml = `
+                        <button class="collected-btn" onclick="przelaczStanPunktu('${strId}', 'odwiedzony')">✓ Odwiedzony NPC</button>
+                        <button class="collected-btn uncollect" onclick="przelaczStanPunktu('${strId}', 'niezebrane')" style="margin-top:4px;">Oznacz jako niezebrane</button>
+                    `;
+                } else if (jestZebrana) {
+                    // Gdy odznaczony jako odwiedzony (zielony): przyciski to "Oznacz jako niezebrane" oraz "✕ Nie mam"
+                    przyciskiHtml = `
+                        <button class="collected-btn uncollect" onclick="przelaczStanPunktu('${strId}', 'niezebrane')">Oznacz jako niezebrane</button>
+                        <button class="collected-btn grey-btn" onclick="przelaczStanPunktu('${strId}', 'niemam')" style="margin-top:4px;">✕ Nie mam</button>
+                    `;
+                } else {
+                    // Bazowy (nieodwiedzony / czerwony): przyciski to "Odwiedzony NPC" oraz "✕ Nie mam"
+                    przyciskiHtml = `
+                        <button class="collected-btn" onclick="przelaczStanPunktu('${strId}', 'odwiedzony')">✓ Odwiedzony NPC</button>
+                        <button class="collected-btn grey-btn" onclick="przelaczStanPunktu('${strId}', 'niemam')" style="margin-top:4px;">✕ Nie mam</button>
+                    `;
+                }
             } else {
-                btnText = jestZebrana ? "✕ Nie mam" : "✓ Zebrane";
-                btnClass = jestZebrana ? "collected-btn uncollect" : "collected-btn";
+                // Standardowe dynie
+                const btnText = jestZebrana ? "✕ Nie mam" : "✓ Zebrane";
+                const btnClass = jestZebrana ? "collected-btn uncollect" : "collected-btn";
+                przyciskiHtml = `<button class="${btnClass}" onclick="przelaczStanPunktu('${strId}', 'zebrane')">${btnText}</button>`;
             }
 
             const imgHtml = item.img ? `<img src="${item.img}" class="popup-img" onclick="pokazZdjecie('${item.img}')" onerror="this.style.display='none'">` : '';
@@ -908,7 +962,7 @@
                     <div style="font-size: 11px; color: #94a3b8; margin: 2px 0 6px 0;">Y: <b>${item.y}</b>, X: <b>${item.x}</b></div>
                     ${descHtml}
                     ${imgHtml}
-                    <button class="${btnClass}" onclick="przelaczStanPunktu('${strId}')">${btnText}</button>
+                    ${przyciskiHtml}
                 </div>
             `;
             marker.bindPopup(popupContent);
