@@ -233,7 +233,7 @@
             border: 1px solid #2a2e3d;
             border-radius: 12px;
             padding: 24px;
-            width: 420px;
+            width: 440px;
             box-shadow: 0 12px 36px rgba(0,0,0,0.8);
             color: #e2e8f0;
             position: relative;
@@ -298,22 +298,38 @@
             margin-bottom: 16px;
             line-height: 1.4;
         }
-        .cloud-meta {
-            font-size: 11px;
-            color: #64748b;
-            margin-bottom: 16px;
-            background: #141720;
-            padding: 8px 10px;
-            border-radius: 6px;
-            border: 1px solid #2a2e3d;
-        }
-        .cloud-buttons-row {
+        
+        .cloud-columns-row {
             display: flex;
-            gap: 10px;
-            margin-bottom: 12px;
+            gap: 12px;
+            margin-bottom: 16px;
         }
-        .cloud-btn {
+        .cloud-col {
             flex: 1;
+            background: #141720;
+            border: 1px solid #2a2e3d;
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .cloud-col-title {
+            font-size: 11px;
+            font-weight: bold;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .cloud-col-time {
+            font-size: 12px;
+            color: #f8fafc;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .cloud-btn {
+            width: 100%;
             padding: 9px;
             border: none;
             font-weight: bold;
@@ -324,20 +340,20 @@
             text-align: center;
         }
         .cloud-btn-download {
+            background: #5865F2;
+            color: white;
+        }
+        .cloud-btn-download:hover {
+            background: #4752C4;
+        }
+        .cloud-btn-upload {
             background: #334155;
             color: #cbd5e1;
             border: 1px solid #475569;
         }
-        .cloud-btn-download:hover {
+        .cloud-btn-upload:hover {
             background: #475569;
             color: #fff;
-        }
-        .cloud-btn-upload {
-            background: #5865F2;
-            color: white;
-        }
-        .cloud-btn-upload:hover {
-            background: #4752C4;
         }
         .cloud-btn-reject {
             width: 100%;
@@ -469,27 +485,34 @@
 <div id="cloud-overlay">
     <div class="cloud-modal">
         <div class="cloud-header">
-            <h3 class="cloud-title" id="cloud-modal-title">Synchronizacja Steam Cloud</h3>
+            <h3 class="cloud-title" id="cloud-modal-title">Konflikt danych z chmurą</h3>
             <div class="tooltip-container">
                 <div class="tooltip-icon">?</div>
                 <div class="tooltip-text">Migracja i zapis w chmurze pozwoli na zapisanie stanów znajdziek na koncie discord, dzięki czemu nie utracisz postępu w przypadku zmiany przeglądarki czy urządzenia. System dba o spójność danych między dyskiem lokalnym a chmurą.</div>
             </div>
         </div>
         <div class="cloud-desc" id="cloud-modal-desc">
-            Wykryto niezsynchronizowany stan postępu znajdziek dla tego eventu. Wybierz odpowiednią akcję, aby kontynuować.
+            Dane zapisane w chmurze różnią się od Twojego lokalnego stanu w przeglądarce (np. używałeś mapy podczas braku połączenia). Wybierz źródło, które chcesz zachować:
         </div>
-        <div class="cloud-meta" id="cloud-meta-info" style="display: none;">
-            Data ostatniej aktualizacji w chmurze: <b id="cloud-timestamp">-</b>
+        
+        <div class="cloud-columns-row">
+            <div class="cloud-col">
+                <div>
+                    <div class="cloud-col-title">Ostatni zapis (lokalny)</div>
+                    <div class="cloud-col-time" id="local-timestamp">-</div>
+                </div>
+                <button class="cloud-btn cloud-btn-upload" onclick="akcjaWyslijDoChmury()">Wyślij do chmury</button>
+            </div>
+            <div class="cloud-col">
+                <div>
+                    <div class="cloud-col-title">Ostatni zapis w chmurze</div>
+                    <div class="cloud-col-time" id="cloud-timestamp">-</div>
+                </div>
+                <button class="cloud-btn cloud-btn-download" onclick="akcjaPobierzZChmury()">Pobierz z chmury</button>
+            </div>
         </div>
-        <div class="cloud-buttons-row" id="cloud-buttons-conflict" style="display: none;">
-            <button class="cloud-btn cloud-btn-download" onclick="akcjaPobierzZChmury()">Pobierz z chmury</button>
-            <button class="cloud-btn cloud-btn-upload" onclick="akcjaWyslijDoChmury()">Wyślij do chmury</button>
-        </div>
-        <div class="cloud-buttons-row" id="cloud-buttons-migrate" style="display: none;">
-            <button class="cloud-btn cloud-btn-download" onclick="akcjaOdrzucMigracje()">Odrzuć</button>
-            <button class="cloud-btn cloud-btn-upload" onclick="akcjaMigruj()">Migruj</button>
-        </div>
-        <button class="cloud-btn-reject" id="cloud-btn-close-conflict" onclick="zamknijCloudModal()" style="display: none;">Odrzuć</button>
+
+        <button class="cloud-btn-reject" onclick="zamknijCloudModal()">Odrzuć</button>
     </div>
 </div>
 
@@ -527,8 +550,8 @@
     <!-- Wybór eventów (obsługa dynamiczna) -->
     <div class="menu-section">
         <h4>Wybierz event</h4>
-        <a href="map.html?event=dynie2026&json=H2026.json" class="event-btn" id="btn-dynie2026">🎃 Dynie Halloween 2026</a>
-        <a href="map.html?event=cukierki2026&json=CUKIERKI.json" class="event-btn" id="btn-cukierki2026">🍬 Cukierki (NPC) 2026</a>
+        <a href="map.html?event=dynie2026&json=dynie26.json" class="event-btn" id="btn-dynie2026">🎃 Dynie Halloween 2026</a>
+        <a href="map.html?event=cukierki2026&json=cukierki26.json" class="event-btn" id="btn-cukierki2026">🍬 Cukierki (NPC) 2026</a>
         <a href="fabula.html" class="event-btn" style="text-decoration: none;">📖 Fabuła Halloween 2026</a>
     </div>
 
@@ -567,7 +590,7 @@
     // --- OBSŁUGA PARAMETRÓW URL ---
     const urlParams = new URLSearchParams(window.location.search);
     const EVENT_NAME = urlParams.get('event') || 'dynie2026';
-    const JSON_FILE = urlParams.get('json') || 'H2026.json';
+    const JSON_FILE = urlParams.get('json') || 'dynie26.json';
 
     // Podświetlenie aktywnego eventu w menu
     const activeBtn = document.getElementById(`btn-${EVENT_NAME}`);
@@ -618,14 +641,21 @@
     });
 
     // --- LOGIKA STEAM CLOUD / KV SYNC ---
-    const localKey = `chrabstwo_zebrane_dynie_${EVENT_NAME}`;
+    const localKey = `chrabstwo_zebrane_${EVENT_NAME}`;
+    const localMetaKey = `chrabstwo_meta_${EVENT_NAME}`;
 
     function pobierzLokalne() {
-        return JSON.parse(localStorage.getItem(localKey) || localStorage.getItem("chrabstwo_zebrane_dynie") || "[]");
+        return JSON.parse(localStorage.getItem(localKey) || "[]");
+    }
+
+    function pobierzCzasLokalny() {
+        return localStorage.getItem(localMetaKey) ? new Date(localStorage.getItem(localMetaKey)) : new Date();
     }
 
     function zapiszLokalne(items) {
         localStorage.setItem(localKey, JSON.stringify(items));
+        const now = new Date();
+        localStorage.setItem(localMetaKey, now.toISOString());
     }
 
     async function sprawdzSynchronizacje() {
@@ -636,24 +666,15 @@
             const data = await res.json();
 
             if (!data.exists) {
-                // Brak zapisu w chmurze
-                if (lokalneDane.length > 0) {
-                    pokazModalMigracji();
-                } else {
-                    // Czyste konto, zsynchronizuj pusty stan
-                    await wyslijDoChmury(lokalneDane, false);
-                    aktualizujStatusChmury(true, new Date());
-                    uruchomMapę();
-                }
+                // Brak zapisu w chmurze -> cichy zapis początkowy
+                await wyslijDoChmury(lokalneDane, true);
+                aktualizujStatusChmury(true, new Date());
+                zebraneDynie = lokalneDane;
+                uruchomMapę();
             } else {
-                // Chmura istnieje, sprawdzamy spójność z lokalnymi
                 const chmuraDane = data.items || [];
                 const chmuraData = data.updatedAt ? new Date(data.updatedAt) : new Date();
 
-                // Porównanie tablic (czy zawierają dokładnie te same elementy)
-                const saRówne = lokalneDane.length === chmuraData.length && lokalneDane.every(val => chmuraDane.includes(val)) && chmuraDane.every(val => lokalneDane.includes(val));
-                
-                // Dla uproszczenia porównajmy długość lub zawartość tablic jako setów
                 const setLok = new Set(lokalneDane);
                 const setChm = new Set(chmuraDane);
                 const identyczne = setLok.size === setChm.size && [...setLok].every(id => setChm.has(id));
@@ -661,11 +682,12 @@
                 if (identyczne) {
                     zebraneDynie = lokalneDane;
                     aktualizujStatusChmury(true, chmuraData);
-                    uruchomMapę();
                 } else {
-                    // Konflikt danych (różnią się lokalne od chmury)
-                    pokazModalKonfliktu(chmuraData);
+                    // Rozbieżność w tle – ustawiamy status ostrzegawczy na lewym panelu
+                    zebraneDynie = lokalneDane;
+                    aktualizujStatusChmury(false, null, "Niezsynchronizowane zmiany");
                 }
+                uruchomMapę();
             }
         } catch (e) {
             console.error("Błąd połączenia z chmurą KV:", e);
@@ -679,7 +701,7 @@
         const indicator = document.getElementById("cloud-status-indicator");
         if (customText) {
             indicator.style.color = "#f59e0b";
-            indicator.innerHTML = `⚠️ ${customText}`;
+            indicator.innerHTML = `⚠️ ${customText}<br><span style="color:#64748b; font-size:10px;">Kliknij, aby zarządzać</span>`;
             return;
         }
 
@@ -693,58 +715,27 @@
         }
     }
 
-    function pokazModalMigracji() {
-        document.getElementById("cloud-modal-title").innerText = "Synchronizacja postępu";
-        document.getElementById("cloud-modal-desc").innerText = "Nie posiadasz synchronizowanych znajdziek z kontem Discord, czy chcesz teraz wykonać migrację?";
-        document.getElementById("cloud-meta-info").style.display = "none";
-        document.getElementById("cloud-buttons-conflict").style.display = "none";
-        document.getElementById("cloud-buttons-migrate").style.display = "flex";
-        document.getElementById("cloud-btn-close-conflict").style.display = "none";
-        document.getElementById("cloud-overlay").style.display = "flex";
-    }
+    window.otworzRecznaSynchronizacje = async function() {
+        let dataChmuryStr = "-";
+        try {
+            const res = await fetch(`/members/event/${EVENT_NAME}/read?discordId=${discordUserId}`);
+            const data = await res.json();
+            if (data.exists && data.updatedAt) {
+                const d = new Date(data.updatedAt);
+                dataChmuryStr = d.toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            }
+        } catch(e) {}
 
-    function pokazModalKonfliktu(dataChmury) {
-        document.getElementById("cloud-modal-title").innerText = "Konflikt danych (Steam Cloud)";
-        document.getElementById("cloud-modal-desc").innerText = "Dane zapisane w chmurze różnią się od Twojego lokalnego stanu w przeglądarce (np. grałeś offline). Wybierz źródło, które chcesz zachować:";
-        const metaInfo = document.getElementById("cloud-meta-info");
-        metaInfo.style.display = "block";
-        document.getElementById("cloud-timestamp").innerText = dataChmury.toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-        
-        document.getElementById("cloud-buttons-conflict").style.display = "flex";
-        document.getElementById("cloud-buttons-migrate").style.display = "none";
-        document.getElementById("cloud-btn-close-conflict").style.display = "block";
-        document.getElementById("cloud-overlay").style.display = "flex";
-    }
+        const lokalnaData = pobierzCzasLokalny();
+        const lokalnaDataStr = lokalnaData.toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-    window.otworzRecznaSynchronizacje = function() {
-        const lokalneDane = pobierzLokalne();
-        pokazModalKonfliktu(new Date());
+        document.getElementById("local-timestamp").innerText = lokalnaDataStr;
+        document.getElementById("cloud-timestamp").innerText = dataChmuryStr;
+        document.getElementById("cloud-overlay").style.display = "flex";
     };
 
     window.zamknijCloudModal = function() {
         document.getElementById("cloud-overlay").style.display = "none";
-        if (zebraneDynie.length === 0) {
-            zebraneDynie = pobierzLokalne();
-        }
-        uruchomMapę();
-    };
-
-    window.akcjaMigruj = async function() {
-        const lokalneDane = pobierzLokalne();
-        await wyslijDoChmury(lokalneDane, true);
-        document.getElementById("cloud-overlay").style.display = "none";
-        zebraneDynie = lokalneDane;
-        aktualizujStatusChmury(true, new Date());
-        uruchomMapę();
-    };
-
-    window.akcjaOdrzucMigracje = function() {
-        document.getElementById("cloud-overlay").style.display = "none";
-        zebraneDynie = [];
-        zapiszLokalne([]);
-        wyslijDoChmury([], true);
-        aktualizujStatusChmury(true, new Date());
-        uruchomMapę();
     };
 
     window.akcjaPobierzZChmury = async function() {
@@ -755,12 +746,13 @@
                 zebraneDynie = data.items || [];
                 zapiszLokalne(zebraneDynie);
                 aktualizujStatusChmury(true, new Date(data.updatedAt || Date.now()));
+                odswiezMarkeryNaMapie();
+                aktualizujLicznik();
             }
         } catch (e) {
             console.error("Błąd pobierania:", e);
         }
         document.getElementById("cloud-overlay").style.display = "none";
-        uruchomMapę();
     };
 
     window.akcjaWyslijDoChmury = async function() {
@@ -769,7 +761,6 @@
         zebraneDynie = lokalneDane;
         document.getElementById("cloud-overlay").style.display = "none";
         aktualizujStatusChmury(true, new Date());
-        uruchomMapę();
     };
 
     async function wyslijDoChmury(items, migracja = false) {
@@ -782,6 +773,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(bodyData)
             });
+            localStorage.setItem(localMetaKey, new Date().toISOString());
         } catch (e) {
             console.error("Błąd zapisu do chmury:", e);
             aktualizujStatusChmury(false, null, "Błąd zapisu (offline)");
