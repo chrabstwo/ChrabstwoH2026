@@ -251,7 +251,7 @@
         }, 300);
     });
 
-    // Funkcja migrująca puste chmury z lokalnych cookies/localStorage przy logowaniu
+    // Automatyczna migracja z cookies / localStorage do chmury, jeśli chmura jest pusta
     async function synchronizujPustaChmureW3Tle(userId) {
         const eventyDoSprawdzenia = ['dynie2026', 'cukierki2026'];
         
@@ -260,7 +260,8 @@
                 const res = await fetch(`${WORKER_URL}/members/event/${ev}/read?discordId=${userId}`);
                 const data = await res.json();
 
-                if (!data.exists || !data.items || data.items.length === 0) {
+                // Jeśli w chmurze nie ma zapisu lub tablica items jest pusta
+                if (!data.exists || !data.items || !Array.isArray(data.items) || data.items.length === 0) {
                     const localKey = `chrabstwo_zebrane_${ev}`;
                     let lokalneDane = JSON.parse(localStorage.getItem(localKey) || "[]");
                     
@@ -272,6 +273,7 @@
                         }
                     }
 
+                    // Jeśli lokalnie są postępy, wypychamy je automatycznie do chmury
                     if (lokalneDane.length > 0) {
                         await fetch(`${WORKER_URL}/members/event/${ev}/migrate`, {
                             method: 'POST',
@@ -281,7 +283,7 @@
                     }
                 }
             } catch (e) {
-                console.error(`Błąd automatycznej synchronizacji chmury dla ${ev}:`, e);
+                console.error(`Błąd synchronizacji chmury dla ${ev}:`, e);
             }
         }
     }
