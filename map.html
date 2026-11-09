@@ -227,7 +227,6 @@
             text-align: center;
         }
 
-        /* Koszyk zmian w panelu admina z ciemnym tłem */
         .changes-cart {
             background: #141720;
             border: 1px solid #2a2e3d;
@@ -447,7 +446,6 @@
         }
         .collected-btn.uncollect { background: #ef4444; }
 
-        /* Styl zebranego elementu: Cukierki z 25% alpha i ciemnoszarym odcieniem, dynie 100% alfa */
         .marker-zebrany-cukierki {
             opacity: 0.25;
             filter: grayscale(100%);
@@ -474,12 +472,10 @@
 </head>
 <body>
 
-<!-- Licznik na górze -->
 <div id="counter-box">
     <span id="counter-label">Zebranych znajdziek:</span> <span id="collected-count">0</span>/<span id="total-count">0</span>
 </div>
 
-<!-- Modal Steam Cloud Sync -->
 <div id="cloud-overlay">
     <div class="cloud-modal">
         <div class="cloud-header">
@@ -513,12 +509,10 @@
     </div>
 </div>
 
-<!-- Modal podglądu zdjęć -->
 <div id="image-modal" onclick="zamknijZdjecie()">
     <img id="modal-img" src="" alt="Powiększony screen">
 </div>
 
-<!-- Sidebar -->
 <div id="sidebar" onclick="rozwinJesliZminimalizowany(event)">
     <div class="sidebar-header">
         <h2>Chrabstwo 4Life</h2>
@@ -534,7 +528,6 @@
         </div>
     </div>
     
-    <!-- Postęp znajdziek -->
     <div class="menu-section">
         <h4 id="progress-header-title">Postęp znajdziek</h4>
         <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; margin-bottom: 10px; color: #cbd5e1;">
@@ -544,7 +537,6 @@
         <button id="reset-progress-btn" class="user-action-btn" style="background: #334155; font-size: 12px;">Zresetuj lokacje</button>
     </div>
 
-    <!-- Wybór eventu -->
     <div class="menu-section">
         <h4>Wybierz event</h4>
         <a href="map.html?event=dynie2026&json=dynie26.json" class="event-btn" id="btn-dynie2026">🎃 Dynie Halloween 2026</a>
@@ -552,7 +544,6 @@
         <a href="fabula.html" class="event-btn" style="text-decoration: none;">📖 Fabuła Halloween 2026</a>
     </div>
 
-    <!-- Chmura -->
     <div class="menu-section">
         <h4>Chmura</h4>
         <div id="cloud-status-indicator" class="cloud-status-box" onclick="otworzRecznaSynchronizacje()">
@@ -560,7 +551,6 @@
         </div>
     </div>
 
-    <!-- Panel Administratora -->
     <div class="menu-section admin-box">
         <h4>Panel Administratora</h4>
         <div id="admin-login-view">
@@ -664,14 +654,9 @@
             const res = await fetch(`${WORKER_URL}/members/event/${EVENT_NAME}/read?discordId=${discordUserId}`);
             const data = await res.json();
 
-            // Jeśli w chmurze nie ma danych (pusta chmura), automatycznie wyślij lokalne dane jeśli istnieją
-            if (!data.exists || !data.items || !Array.isArray(data.items) || data.items.length === 0) {
-                if (lokalneDane.length > 0) {
-                    await wyslijDoChmury(lokalneDane, true);
-                    aktualizujStatusChmury(true, new Date());
-                } else {
-                    aktualizujStatusChmury(true, new Date());
-                }
+            if (!data.exists) {
+                // Jeśli brak wpisu w chmurze, tworzymy go na podstawie danych lokalnych
+                await wyslijDoChmury(lokalneDane, true);
                 zebraneElementy = lokalneDane;
                 uruchomMapę();
             } else {
@@ -686,9 +671,9 @@
                     zebraneElementy = lokalneDane;
                     aktualizujStatusChmury(true, chmuraData);
                 } else {
-                    // Jeśli chmura ma zapis, a lokalnie jest inaczej, dajemy wybór / niezsynchronizowane
+                    // Wykryto konflikt / niezgodność danych lokalnych i chmury
                     zebraneElementy = lokalneDane;
-                    aktualizujStatusChmury(false, null, "Niezsynchronizowane zmiany");
+                    aktualizujStatusChmury(false, chmuraData, "Konflikt / Niezsynchronizowane");
                 }
                 uruchomMapę();
             }
@@ -703,7 +688,7 @@
         const indicator = document.getElementById("cloud-status-indicator");
         if (customText) {
             indicator.style.color = "#f59e0b";
-            indicator.innerHTML = `⚠️ ${customText}<br><span style="color:#64748b; font-size:10px;">Kliknij, aby zarządzać</span>`;
+            indicator.innerHTML = `⚠️ ${customText}<br><span style="color:#64748b; font-size:10px;">Kliknij, aby rozwiązać</span>`;
             return;
         }
         if (zsynchronizowano && data) {
@@ -751,7 +736,6 @@
         await wyslijDoChmury(lokalneDane, true);
         zebraneElementy = lokalneDane;
         document.getElementById("cloud-overlay").style.display = "none";
-        aktualizujStatusChmury(true, new Date());
     };
 
     async function wyslijDoChmury(items, migracja = false) {
@@ -840,11 +824,12 @@
     window.zamknijZdjecie = () => { document.getElementById("image-modal").style.display = "none"; };
 
     function stwórzIkonę(jestZebrana, jestZmodyfikowany) {
+        // Niezrobione dynie i cukierki mają ten sam jasnoczerwony/różowy kolor #ff5252
         let kolor = jestZebrana ? "#00b894" : "#ff5252";
         if (isCukierki) {
-            kolor = jestZebrana ? "#6b7280" : "#ec4899"; // Szary dla zebranych cukierków, różowy dla nieodwiedzonych
+            kolor = jestZebrana ? "#6b7280" : "#ff5252"; 
         }
-        if (jestZmodyfikowany) kolor = "#3b82f6"; // Niebieski dla edytowanych/dodanych przez admina
+        if (jestZmodyfikowany) kolor = "#3b82f6";
 
         const pinSvg = `
             <svg width="30" height="42" viewBox="0 0 384 512" xmlns="http://www.w3.org/2000/svg">
@@ -910,7 +895,7 @@
                 btnText = jestZebrana ? "✕ Nie mam" : "✓ Odwiedzony NPC";
                 btnClass = jestZebrana ? "collected-btn uncollect" : "collected-btn";
             } else {
-                btnText = jestZebrana ? "Oznacz jako niezebrane" : "✓ Zebrane";
+                btnText = jestZebrana ? "✕ Nie mam" : "✓ Zebrane";
                 btnClass = jestZebrana ? "collected-btn uncollect" : "collected-btn";
             }
 
