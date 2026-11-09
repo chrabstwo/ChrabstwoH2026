@@ -447,15 +447,14 @@
         }
         .collected-btn.uncollect { background: #ef4444; }
 
-        /* Styl zebranego elementu z 25% alpha (ciemnoszary) dla cukierków */
+        /* Styl zebranego elementu: Cukierki z 25% alpha i ciemnoszarym odcieniem, dynie 100% alfa */
         .marker-zebrany-cukierki {
             opacity: 0.25;
             filter: grayscale(100%);
             transition: opacity 0.3s;
         }
         .marker-zebrany-dynie {
-            opacity: 0.35;
-            filter: grayscale(80%);
+            opacity: 1.0;
             transition: opacity 0.3s;
         }
 
@@ -827,7 +826,7 @@
     function stwórzIkonę(jestZebrana, jestZmodyfikowany) {
         let kolor = jestZebrana ? "#00b894" : "#ff5252";
         if (isCukierki) {
-            kolor = jestZebrana ? "#6b7280" : "#ec4899"; // Różowy dla cukierków, szary dla zebranych
+            kolor = jestZebrana ? "#6b7280" : "#ec4899"; // Szary dla zebranych cukierków, różowy dla nieodwiedzonych
         }
         if (jestZmodyfikowany) kolor = "#3b82f6"; // Niebieski dla edytowanych/dodanych przez admina
 
